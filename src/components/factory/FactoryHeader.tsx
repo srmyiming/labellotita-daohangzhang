@@ -1,5 +1,6 @@
 import React from 'react';
-import { CheckCircle, MapPin, Phone, Download, Tag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, MapPin, Phone, Tag } from 'lucide-react';
 import { Button } from '../ui/button';
 import { categories } from '../../data';
 
@@ -11,6 +12,7 @@ interface FactoryHeaderProps {
 }
 
 export function FactoryHeader({ name, address, verified, category }: FactoryHeaderProps) {
+  const navigate = useNavigate();
   const categoryName = categories.find(c => c.id === category)?.name;
 
   return (
@@ -39,14 +41,13 @@ export function FactoryHeader({ name, address, verified, category }: FactoryHead
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="flex-1 md:flex-none">
+        <div className="flex items-center">
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/contact')}
+          >
             <Phone className="h-4 w-4 mr-2" />
             联系方式
-          </Button>
-          <Button className="flex-1 md:flex-none bg-primary text-primary-foreground hover:bg-primary/90">
-            <Download className="h-4 w-4 mr-2" />
-            产品目录
           </Button>
         </div>
       </div>

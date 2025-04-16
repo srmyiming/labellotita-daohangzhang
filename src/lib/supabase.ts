@@ -200,3 +200,38 @@ export const countriesApi = {
     return data;
   }
 };
+
+// PDF 文件存储相关 API
+export const storageApi = {
+  // 上传 PDF 文件
+  uploadPdf: async (manufacturerId: string, file: File) => {
+    const fileName = `${manufacturerId}/catalog.pdf`;
+    const { data, error } = await supabase.storage
+      .from('catalogs')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) throw error;
+    return data;
+  },
+
+  // 获取 PDF 文件 URL
+  getPdfUrl: (manufacturerId: string) => {
+    const { data } = supabase.storage
+      .from('catalogs')
+      .getPublicUrl(`${manufacturerId}/catalog.pdf`);
+    
+    return data.publicUrl;
+  },
+
+  // 删除 PDF 文件
+  deletePdf: async (manufacturerId: string) => {
+    const { error } = await supabase.storage
+      .from('catalogs')
+      .remove([`${manufacturerId}/catalog.pdf`]);
+
+    if (error) throw error;
+  }
+};

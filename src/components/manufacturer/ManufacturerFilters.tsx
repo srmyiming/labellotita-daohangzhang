@@ -8,20 +8,15 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Category, Region } from '../../types';
+import { Filters } from '../../hooks/useManufacturerFilters';
 
 interface ManufacturerFiltersProps {
   categories: Category[];
   regions: Region[];
   countries: any[];
-  filters: {
-    categoryId: string | null;
-    regionId: string | null;
-    exportCountry: string | null;
-    tagSearch: string;
-    selectedTags: string[];
-  };
+  filters: Filters;
   filteredTags: string[];
-  onFilterChange: (key: string, value: any) => void;
+  onFilterChange: (key: keyof Filters, value: any) => void;
   onTagToggle: (tag: string) => void;
   onReset: () => void;
 }

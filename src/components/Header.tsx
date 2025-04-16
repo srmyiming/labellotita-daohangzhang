@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Utensils, X } from 'lucide-react';
+import { Search, Menu, Utensils, X, Clock } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
 import {
@@ -9,23 +9,60 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 
-export default function Header({ onSearch }: { onSearch: (term: string) => void }) {
+export default function Header({ 
+  onSearch, 
+  searchHistory = [],
+  suggestions = []
+}: { 
+  onSearch: (term: string) => void,
+  searchHistory?: string[],
+  suggestions?: Array<{type: string, text: string}>
+}) {
   const [isSearching, setIsSearching] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState('');
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // 点击外部关闭下拉框
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchValue(value);
     onSearch(value);
+
+    // 如果输入有内容,显示建议
+    if (value.trim()) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchValue.trim()) {
-      navigate('/');
+      navigate(`/manufacturers?search=${encodeURIComponent(searchValue.trim())}`);
       onSearch(searchValue);
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionClick = (text: string) => {
+    setSearchValue(text);
+    onSearch(text);
+    navigate(`/manufacturers?search=${encodeURIComponent(text.trim())}`);
+    setShowSuggestions(false);
   };
 
   return (
@@ -94,7 +131,7 @@ export default function Header({ onSearch }: { onSearch: (term: string) => void 
             </Link>
           </nav>
           
-          <div className="hidden lg:block max-w-xs w-full">
+          <div className="hidden lg:block max-w-xs w-full" ref={searchRef}>
             <label htmlFor="search" className="sr-only">搜索工厂</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -108,7 +145,69 @@ export default function Header({ onSearch }: { onSearch: (term: string) => void 
                 type="search"
                 onChange={handleSearch}
                 onKeyPress={handleKeyPress}
+                onFocus={() => searchValue.trim() && setShowSuggestions(true)}
               />
+              
+              {/* 清除按钮 */}
+              {searchValue && (
+                <button
+                  onClick={() => {
+                    setSearchValue('');
+                    onSearch('');
+                    setShowSuggestions(false);
+                  }}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+              
+              {/* 搜索建议下拉框 */}
+              {showSuggestions && (searchHistory.length > 0 || suggestions.length > 0) && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-background rounded-xl shadow-lg border z-50">
+                  {/* 搜索建议 */}
+                  {suggestions.length > 0 && (
+                    <>
+                      <div className="px-3 py-2 text-xs text-muted-foreground">搜索建议</div>
+                      <div className="max-h-40 overflow-y-auto">
+                        {suggestions.map((suggestion, index) => (
+                          <button
+                            key={`suggestion-${index}`}
+                            className="w-full px-3 py-2 text-left hover:bg-muted text-sm flex items-center"
+                            onClick={() => handleSuggestionClick(suggestion.text)}
+                          >
+                            <Search className="h-4 w-4 text-muted-foreground mr-2" />
+                            <span>{suggestion.text}</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              {suggestion.type}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="border-t"></div>
+                    </>
+                  )}
+                  
+                  {/* 搜索历史 */}
+                  {searchHistory.length > 0 && (
+                    <>
+                      <div className="px-3 py-2 text-xs text-muted-foreground">搜索历史</div>
+                      <div className="max-h-40 overflow-y-auto">
+                        {searchHistory.map((term, index) => (
+                          <button
+                            key={`history-${index}`}
+                            className="w-full px-3 py-2 text-left hover:bg-muted text-sm flex items-center"
+                            onClick={() => handleSuggestionClick(term)}
+                          >
+                            <Clock className="h-4 w-4 text-muted-foreground mr-2" />
+                            <span>{term}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           

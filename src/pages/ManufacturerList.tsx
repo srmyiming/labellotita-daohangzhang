@@ -1,5 +1,5 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Factory } from '../types';
@@ -13,9 +13,17 @@ interface ManufacturerListProps {
   onFactoryClick: (factory: Factory) => void;
 }
 
+interface LoaderData {
+  searchTerm?: string;
+}
+
 export default function ManufacturerList({ onFactoryClick }: ManufacturerListProps) {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const loaderData = useLoaderData() as LoaderData;
+  
   const { selectedCategoryFromRoute } = location.state || {};
+  const searchTermFromUrl = searchParams.get('search') || loaderData?.searchTerm || '';
 
   const {
     // 过滤器状态和操作
@@ -36,10 +44,22 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     
     // 计算属性
     filteredTags,
+    searchSuggestions,
+
+    // 搜索历史
+    searchHistory,
+    clearHistory,
   } = useManufacturerFilters({ onFactoryClick });
 
+  // 从URL参数或加载器数据设置初始搜索词
+  useEffect(() => {
+    if (searchTermFromUrl) {
+      updateFilter('searchTerm', searchTermFromUrl);
+    }
+  }, [searchTermFromUrl, updateFilter]);
+
   // 从路由状态设置初始分类
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedCategoryFromRoute) {
       updateFilter('categoryId', selectedCategoryFromRoute);
     }
@@ -75,7 +95,10 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
             {/* 搜索框 */}
             <ManufacturerSearch 
               value={filters.searchTerm}
-              onChange={(term) => updateFilter('searchTerm', term)} 
+              onChange={(term) => updateFilter('searchTerm', term)}
+              searchHistory={searchHistory}
+              onClearHistory={clearHistory}
+              suggestions={searchSuggestions}
             />
             
             {/* 结果统计 */}

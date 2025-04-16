@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   createBrowserRouter, 
   RouterProvider, 
@@ -22,6 +22,11 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import { manufacturersApi } from './lib/supabase';
 import { toast } from 'sonner';
+import { Factory } from './types';
+
+// 搜索历史存储键
+const SEARCH_HISTORY_KEY = 'search_history';
+const MAX_HISTORY_ITEMS = 10;
 
 function AppContent() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +36,92 @@ function AppContent() {
   const [selectedFactory, setSelectedFactory] = useState<Factory | null>(null);
   const [recommendedFactories, setRecommendedFactories] = useState<Factory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    const savedHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
   const navigate = useNavigate();
+  
+  // 搜索建议 - 根据当前工厂数据生成
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    
+    const suggestions: Array<{type: string, text: string}> = [];
+    const term = searchTerm.toLowerCase();
+    const maxSuggestions = 5;
+    
+    // 从制造商名称生成建议
+    recommendedFactories.forEach(factory => {
+      if (suggestions.length >= maxSuggestions) return;
+      if (factory.name.toLowerCase().includes(term)) {
+        suggestions.push({
+          type: '制造商',
+          text: factory.name
+        });
+      }
+    });
+    
+    // 从产品名称生成建议
+    recommendedFactories.forEach(factory => {
+      if (suggestions.length >= maxSuggestions) return;
+      factory.products?.forEach((product: string) => {
+        if (suggestions.length >= maxSuggestions) return;
+        if (product.toLowerCase().includes(term)) {
+          suggestions.push({
+            type: '产品',
+            text: product
+          });
+        }
+      });
+    });
+    
+    // 如果之前没有找到足够的建议,添加一些默认分类建议
+    if (suggestions.length < maxSuggestions) {
+      const categories = ['奶酪', '橄榄油', '香肠', '火腿', '葡萄酒'];
+      categories.forEach(category => {
+        if (suggestions.length >= maxSuggestions) return;
+        if (category.toLowerCase().includes(term)) {
+          suggestions.push({
+            type: '分类',
+            text: category
+          });
+        }
+      });
+    }
+    
+    return suggestions;
+  }, [searchTerm, recommendedFactories]);
+  
+  // 处理搜索词更新,保存到历史记录
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    
+    // 如果搜索词不为空,保存到历史记录
+    if (term.trim()) {
+      saveToSearchHistory(term);
+    }
+  };
+  
+  // 保存搜索历史
+  const saveToSearchHistory = (term: string) => {
+    setSearchHistory(prev => {
+      // 去重并置顶
+      const newHistory = [
+        term,
+        ...prev.filter(item => item !== term)
+      ].slice(0, MAX_HISTORY_ITEMS);
+      
+      // 保存到本地存储
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+  
+  // 清除搜索历史
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  };
   
   useEffect(() => {
     const fetchRecommendedFactories = async () => {
@@ -60,7 +150,11 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onSearch={setSearchTerm} />
+      <Header 
+        onSearch={handleSearch} 
+        searchHistory={searchHistory}
+        suggestions={searchSuggestions}
+      />
       <FloatingContact />
       
       {showDetail && selectedFactory && (
@@ -76,7 +170,11 @@ function AppContent() {
       
       {!showDetail && !showAllManufacturers && (
         <>
-          <Hero onSearch={setSearchTerm} />
+          <Hero 
+            onSearch={handleSearch} 
+            searchHistory={searchHistory} 
+            suggestions={searchSuggestions} 
+          />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <CategoryList />
             
@@ -142,8 +240,14 @@ const router = createBrowserRouter([
   },
   {
     path: "/manufacturers",
-    element: <ManufacturerList onFactoryClick={(factory) => {
-      navigate(`/manufacturers/${factory.id}`);
+    loader: ({ request }) => {
+      // 从URL参数中获取搜索词
+      const url = new URL(request.url);
+      const searchTerm = url.searchParams.get('search') || '';
+      return { searchTerm };
+    },
+    element: <ManufacturerList onFactoryClick={(factory: Factory) => {
+      window.location.href = `/manufacturers/${factory.id}`;
     }} />,
   },
   {
