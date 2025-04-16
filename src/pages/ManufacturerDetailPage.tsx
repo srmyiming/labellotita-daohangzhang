@@ -25,9 +25,24 @@ export default function ManufacturerDetailPage() {
       try {
         setLoading(true);
         const data = await manufacturersApi.getById(id);
+        console.log('获取到的工厂数据:', {
+          基本信息: {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+          },
+          生产能力: {
+            annual_production: data.annual_production,
+            daily_production: data.daily_production,
+            storage_capacity: data.storage_capacity,
+            production_lines: data.production_lines,
+          },
+          认证信息: data.manufacturer_certifications,
+          出口国家: data.manufacturer_export_countries,
+        });
         setFactory(data);
       } catch (error) {
-        console.error('Error fetching factory:', error);
+        console.error('获取工厂数据失败:', error);
         toast.error('获取制造商信息失败');
         setUseStaticData(true);
       } finally {
@@ -77,6 +92,23 @@ export default function ManufacturerDetailPage() {
       setFactory(staticFactory);
     }
   }, [useStaticData]);
+
+  useEffect(() => {
+    if (factory) {
+      console.log('工厂数据更新:', {
+        生产能力是否存在: {
+          annual_production: !!factory.annual_production,
+          daily_production: !!factory.daily_production,
+          storage_capacity: !!factory.storage_capacity,
+          production_lines: !!factory.production_lines,
+        },
+        认证信息是否存在: !!factory.manufacturer_certifications,
+        认证数量: factory.manufacturer_certifications?.length,
+        出口国家是否存在: !!factory.manufacturer_export_countries,
+        出口国家数量: factory.manufacturer_export_countries?.length,
+      });
+    }
+  }, [factory]);
 
   return (
     <div className="min-h-screen bg-background">

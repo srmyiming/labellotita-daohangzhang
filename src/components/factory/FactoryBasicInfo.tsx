@@ -1,4 +1,5 @@
 import { Calendar, Users, Clock, Globe, Factory, Box, Scale, Truck, Award, CheckCircle2 } from 'lucide-react';
+import React from 'react';
 
 interface FactoryBasicInfoProps {
   description: string;
@@ -39,6 +40,29 @@ export function FactoryBasicInfo({
   updatedAt,
   manufacturer_export_countries
 }: FactoryBasicInfoProps) {
+  
+  // 添加调试日志
+  React.useEffect(() => {
+    console.log('FactoryBasicInfo 组件收到的数据:', {
+      生产能力: {
+        annualProduction,
+        dailyProduction,
+        storageCapacity,
+        productionLines,
+      },
+      认证信息: {
+        有认证数据: !!manufacturer_certifications,
+        认证数量: manufacturer_certifications?.length,
+        认证列表: manufacturer_certifications,
+      },
+      出口国家: {
+        有出口国家数据: !!manufacturer_export_countries,
+        国家数量: manufacturer_export_countries?.length,
+        国家列表: manufacturer_export_countries,
+      }
+    });
+  }, [annualProduction, dailyProduction, storageCapacity, productionLines, manufacturer_certifications, manufacturer_export_countries]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <h2 className="text-lg font-semibold mb-4">基本信息</h2>
