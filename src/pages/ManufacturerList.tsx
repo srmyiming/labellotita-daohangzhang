@@ -3,7 +3,7 @@ import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Factory } from '../types';
-import { useManufacturerFilters } from '../hooks/useManufacturerFilters';
+import { useManufacturerFilters, Filters } from '../hooks/useManufacturerFilters';
 import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters';
 import ManufacturerSearch from '../components/manufacturer/ManufacturerSearch';
 import ManufacturerListItem from '../components/manufacturer/ManufacturerListItem';
@@ -24,11 +24,10 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   const [searchParams] = useSearchParams();
   const loaderData = useLoaderData() as LoaderData;
   
-  // 从路由状态获取分类ID
-  const locationState = location.state || {};
-  const selectedCategoryFromRoute = locationState.selectedCategory;
+  // 从路由状态和URL参数获取初始值
+  const { selectedCategory: categoryFromRoute, fromCategories } = location.state || {};
   const searchTermFromUrl = searchParams.get('search') || loaderData?.searchTerm || '';
-  const categoryIdFromUrl = searchParams.get('category') || selectedCategoryFromRoute || loaderData?.categoryId || '';
+  const categoryIdFromUrl = searchParams.get('category') || categoryFromRoute || loaderData?.categoryId || '';
 
   const {
     // 过滤器状态和操作
@@ -56,44 +55,52 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     clearHistory,
   } = useManufacturerFilters({ onFactoryClick });
 
-  const [searchTerm, setSearchTerm] = useState(searchTermFromUrl);
-  const [categoryId, setCategoryId] = useState(categoryIdFromUrl);
+  // 本地状态管理
+  const [localFilters, setLocalFilters] = useState({
+    searchTerm: searchTermFromUrl,
+    categoryId: categoryIdFromUrl
+  });
 
-  // 当从分类页面跳转来时，设置分类筛选器
-  useEffect(() => {
-    if (selectedCategoryFromRoute) {
-      updateFilter('categoryId', selectedCategoryFromRoute);
-      setCategoryId(selectedCategoryFromRoute);
-    }
-  }, [selectedCategoryFromRoute, updateFilter]);
-
-  // 从URL参数或加载器数据设置初始搜索词
+  // 初始化过滤器
   useEffect(() => {
     if (searchTermFromUrl) {
       updateFilter('searchTerm', searchTermFromUrl);
     }
-  }, [searchTermFromUrl, updateFilter]);
-
-  useEffect(() => {
-    async function checkData() {
-      try {
-        console.log('开始检查数据...');
-        const allManufacturers = await manufacturersApi.getAll();
-        console.log('所有制造商:', allManufacturers);
-        
-        const tables = await supabase.from('information_schema.tables').select('*');
-        console.log('数据库表:', tables);
-      } catch (error) {
-        console.error('数据检查失败:', error);
-      }
+    if (categoryIdFromUrl) {
+      updateFilter('categoryId', categoryIdFromUrl);
     }
-    
-    checkData();
   }, []);
+
+  // 处理过滤器更新
+  const handleFilterChange = (key: keyof Filters, value: string | null) => {
+    if (key === 'searchTerm' || key === 'categoryId') {
+      setLocalFilters(prev => ({ ...prev, [key]: value }));
+    }
+    updateFilter(key, value);
+    
+    // 更新 URL 参数
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (value) {
+      newSearchParams.set(key === 'searchTerm' ? 'search' : key, value);
+    } else {
+      newSearchParams.delete(key === 'searchTerm' ? 'search' : key);
+    }
+    window.history.replaceState(null, '', `${location.pathname}?${newSearchParams}`);
+  };
+
+  // 处理重置
+  const handleReset = () => {
+    setLocalFilters({
+      searchTerm: '',
+      categoryId: ''
+    });
+    resetFilters();
+    window.history.replaceState(null, '', location.pathname);
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      <Header onSearch={(term) => updateFilter('searchTerm', term)} />
+      <Header onSearch={(term) => handleFilterChange('searchTerm', term)} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="py-8">
@@ -109,19 +116,23 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
             categories={categories}
             regions={regions}
             countries={countries}
-            filters={filters}
+            filters={{
+              ...filters,
+              searchTerm: localFilters.searchTerm,
+              categoryId: localFilters.categoryId
+            }}
             filteredTags={filteredTags}
-            onFilterChange={updateFilter}
+            onFilterChange={handleFilterChange}
             onTagToggle={toggleTag}
-            onReset={resetFilters}
+            onReset={handleReset}
           />
 
           {/* 右侧内容区 */}
           <div className="flex-1">
             {/* 搜索框 */}
             <ManufacturerSearch 
-              value={filters.searchTerm}
-              onChange={(term) => updateFilter('searchTerm', term)}
+              value={localFilters.searchTerm}
+              onChange={(term) => handleFilterChange('searchTerm', term)}
               searchHistory={searchHistory}
               onClearHistory={clearHistory}
               suggestions={searchSuggestions}
@@ -158,15 +169,12 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">
-                  没有找到匹配的工厂。请尝试其他搜索条件。
-                </p>
+                <p className="text-gray-500 text-lg">没有找到符合条件的制造商</p>
               </div>
             )}
           </div>
         </div>
       </div>
-      
       <Footer />
     </div>
   );

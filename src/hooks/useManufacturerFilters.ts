@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Category, Region, Factory } from '../types';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 
 const SEARCH_HISTORY_KEY = 'manufacturer_search_history';
 const MAX_HISTORY_ITEMS = 10;
@@ -61,12 +62,14 @@ interface RawManufacturer {
 }
 
 export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFiltersProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // 基础状态
   const [filters, setFilters] = useState<Filters>({
-    searchTerm: '',
-    categoryId: null,
-    regionId: null,
-    exportCountry: null,
+    searchTerm: searchParams.get('search') || '',
+    categoryId: searchParams.get('category') || null,
+    regionId: searchParams.get('region') || null,
+    exportCountry: searchParams.get('country') || null,
     tagSearch: '',
     selectedTags: []
   });
@@ -191,7 +194,7 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
               type,
               order
             ),
-            manufacturer_category_relations!inner (
+            manufacturer_category_relations (
               category_id,
               manufacturer_categories (
                 id,
@@ -213,149 +216,17 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
             )
           `);
 
-        // 应用过滤条件
+        // 如果有搜索条件,添加搜索过滤
         if (filters.searchTerm) {
           const searchTerm = filters.searchTerm.trim();
-          
-          // 根据多个字段进行搜索 - 使用单独的查询拼接结果
-          const nameQuery = supabase
-            .from('manufacturers')
-            .select(`
-              id,
-              name,
-              description,
-              address,
-              city,
-              region,
-              phone,
-              email,
-              website,
-              verified,
-              rating,
-              is_pinned,
-              pinned_at,
-              manufacturer_images (
-                url,
-                type,
-                order
-              ),
-              manufacturer_category_relations!inner (
-                category_id,
-                manufacturer_categories (
-                  id,
-                  name,
-                  icon
-                )
-              ),
-              manufacturer_products (
-                name,
-                description
-              ),
-              manufacturer_export_countries (
-                country_code
-              ),
-              manufacturer_tags (
-                tags (
-                  name
-                )
-              )
-            `)
-            .ilike('name', `%${searchTerm}%`);
-          
-          const descQuery = supabase
-            .from('manufacturers')
-            .select(`
-              id,
-              name,
-              description,
-              address,
-              city,
-              region,
-              phone,
-              email,
-              website,
-              verified,
-              rating,
-              is_pinned,
-              pinned_at,
-              manufacturer_images (
-                url,
-                type,
-                order
-              ),
-              manufacturer_category_relations!inner (
-                category_id,
-                manufacturer_categories (
-                  id,
-                  name,
-                  icon
-                )
-              ),
-              manufacturer_products (
-                name,
-                description
-              ),
-              manufacturer_export_countries (
-                country_code
-              ),
-              manufacturer_tags (
-                tags (
-                  name
-                )
-              )
-            `)
-            .ilike('description', `%${searchTerm}%`);
-          
-          const [nameResult, descResult] = await Promise.all([
-            nameQuery,
-            descQuery
-          ]);
-          
-          if (nameResult.error) throw nameResult.error;
-          if (descResult.error) throw descResult.error;
-          
-          // 合并结果并去重
-          const uniqueResults = new Map();
-          
-          [...(nameResult.data || []), ...(descResult.data || [])].forEach(item => {
-            uniqueResults.set(item.id, item);
-          });
-          
-          const rawManufacturers = Array.from(uniqueResults.values());
-          
-          // 转换数据结构以匹配Factory类型
-          const manufacturers: Factory[] = (rawManufacturers as unknown as RawManufacturer[])?.map(raw => ({
-            id: raw.id,
-            name: raw.name,
-            category: raw.manufacturer_category_relations?.[0]?.manufacturer_categories?.name || '',
-            description: raw.description,
-            address: raw.address,
-            city: raw.city,
-            phone: raw.phone,
-            email: raw.email,
-            website: raw.website,
-            products: raw.manufacturer_products?.map(p => p.name) || [],
-            verified: raw.verified,
-            rating: raw.rating,
-            region: raw.region,
-            is_pinned: raw.is_pinned,
-            pinned_at: raw.pinned_at,
-            manufacturer_tags: raw.manufacturer_tags,
-            manufacturer_export_countries: raw.manufacturer_export_countries,
-            factoryImages: raw.manufacturer_images?.map(img => img.url) || []
-          })) || [];
-          
-          setData(prev => ({
-            ...prev,
-            manufacturers
-          }));
-          setStatus(prev => ({ ...prev, loading: false }));
-          return;
+          query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,manufacturer_products.name.ilike.%${searchTerm}%`);
         }
 
-        // 如果没有搜索条件,使用默认查询
+        // 应用其他过滤条件
         if (filters.categoryId) {
-          query = query.eq('manufacturer_category_relations.category_id', filters.categoryId);
+          query = query
+            .eq('manufacturer_category_relations.category_id', filters.categoryId)
+            .not('manufacturer_category_relations', 'is', null);
         }
 
         if (filters.regionId) {
@@ -491,6 +362,42 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
   // 更新过滤器
   const updateFilter = (key: keyof Filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+    
+    // 更新URL参数
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (value) {
+      switch (key) {
+        case 'searchTerm':
+          newSearchParams.set('search', value);
+          break;
+        case 'categoryId':
+          newSearchParams.set('category', value);
+          break;
+        case 'regionId':
+          newSearchParams.set('region', value);
+          break;
+        case 'exportCountry':
+          newSearchParams.set('country', value);
+          break;
+      }
+    } else {
+      switch (key) {
+        case 'searchTerm':
+          newSearchParams.delete('search');
+          break;
+        case 'categoryId':
+          newSearchParams.delete('category');
+          break;
+        case 'regionId':
+          newSearchParams.delete('region');
+          break;
+        case 'exportCountry':
+          newSearchParams.delete('country');
+          break;
+      }
+    }
+    setSearchParams(newSearchParams);
+
     if (key === 'searchTerm' && value) {
       saveToHistory(value);
     }
@@ -506,6 +413,8 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
       tagSearch: '',
       selectedTags: []
     });
+    // 清除所有URL参数
+    setSearchParams(new URLSearchParams());
   };
 
   // 切换标签选择

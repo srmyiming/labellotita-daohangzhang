@@ -247,3 +247,54 @@ export const storageApi = {
     if (error) throw error;
   }
 };
+
+// 分类相关 API
+export const categoriesApi = {
+  // 获取所有分类
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('manufacturer_categories')
+      .select(`
+        *,
+        manufacturer_category_relations (
+          count
+        )
+      `);
+
+    if (error) throw error;
+    return data;
+  },
+
+  // 获取单个分类详情
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('manufacturer_categories')
+      .select(`
+        *,
+        manufacturer_category_relations (
+          count
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // 搜索分类
+  search: async (searchTerm: string) => {
+    const { data, error } = await supabase
+      .from('manufacturer_categories')
+      .select(`
+        *,
+        manufacturer_category_relations (
+          count
+        )
+      `)
+      .ilike('name', `%${searchTerm}%`);
+
+    if (error) throw error;
+    return data;
+  }
+};
