@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ZoomIn, Download } from 'lucide-react';
+import { ZoomIn, Download, X } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
@@ -24,8 +24,17 @@ export default function CatalogTab({ pdfUrl }: CatalogTabProps) {
             size="sm"
             onClick={() => setIsFullscreen(!isFullscreen)}
           >
-            <ZoomIn className="h-4 w-4 mr-2" />
-            放大查看
+            {isFullscreen ? (
+              <>
+                <X className="h-4 w-4 mr-2" />
+                退出全屏
+              </>
+            ) : (
+              <>
+                <ZoomIn className="h-4 w-4 mr-2" />
+                全屏查看
+              </>
+            )}
           </Button>
           <Button 
             variant="outline" 
@@ -38,11 +47,31 @@ export default function CatalogTab({ pdfUrl }: CatalogTabProps) {
           </Button>
         </div>
       </div>
-      <div className={`${isFullscreen ? 'fixed inset-4 z-50 bg-white p-4 rounded-lg shadow-2xl' : 'relative'}`}>
+      
+      <div className={`
+        ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'relative'} 
+        transition-all duration-300
+      `}>
+        {isFullscreen && (
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullscreen(false)}
+            >
+              <X className="h-4 w-4 mr-2" />
+              关闭
+            </Button>
+          </div>
+        )}
+        
         {pdfUrl ? (
-          <div className={`${isFullscreen ? 'h-full' : 'aspect-[16/9]'}`}>
+          <div className={`
+            ${isFullscreen ? 'h-screen p-4' : 'h-[600px]'}
+            transition-all duration-300
+          `}>
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
-              <div className="w-full h-full rounded-lg border overflow-hidden">
+              <div className="w-full h-full rounded-lg border overflow-hidden bg-white shadow-sm">
                 <Viewer
                   fileUrl={pdfUrl}
                   plugins={[defaultLayoutPluginInstance]}
@@ -52,9 +81,10 @@ export default function CatalogTab({ pdfUrl }: CatalogTabProps) {
             </Worker>
           </div>
         ) : (
-          <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
+          <div className="h-[600px] bg-gray-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
-              <p className="text-gray-500">暂无产品目录</p>
+              <p className="text-gray-500 mb-2">暂无产品目录</p>
+              <p className="text-sm text-gray-400">制造商尚未上传PDF产品目录</p>
             </div>
           </div>
         )}
