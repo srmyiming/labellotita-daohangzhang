@@ -1,0 +1,12 @@
+For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.
+
+By default, this template supports JSX syntax with Tailwind CSS classes, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.
+
+Use icons from lucide-react for logos.
+
+Use stock photos from unsplash where appropriate, only valid URLs you know exist. Do not download the images, only link to them in image tags.
+
+回复用户的时候使用中文
+
+为了保证代码可维护性和模块清晰性，每个代码文件不得超过 300 行。
+如果某个文件超过 300 行,提醒用户询问是否同意代码进行合理拆分，请在不改变功能逻辑的前提下，对代码进行合理拆分，分离为多个独立文件。目标是：单一职责、易于维护、结构清晰。
