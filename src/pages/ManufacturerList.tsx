@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -8,6 +8,7 @@ import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters'
 import ManufacturerSearch from '../components/manufacturer/ManufacturerSearch';
 import ManufacturerListItem from '../components/manufacturer/ManufacturerListItem';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface ManufacturerListProps {
   onFactoryClick: (factory: Factory) => void;
@@ -15,6 +16,7 @@ interface ManufacturerListProps {
 
 interface LoaderData {
   searchTerm?: string;
+  categoryId?: string;
 }
 
 export default function ManufacturerList({ onFactoryClick }: ManufacturerListProps) {
@@ -22,8 +24,11 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   const [searchParams] = useSearchParams();
   const loaderData = useLoaderData() as LoaderData;
   
-  const { selectedCategoryFromRoute } = location.state || {};
+  // 从路由状态获取分类ID
+  const locationState = location.state || {};
+  const selectedCategoryFromRoute = locationState.selectedCategory;
   const searchTermFromUrl = searchParams.get('search') || loaderData?.searchTerm || '';
+  const categoryIdFromUrl = searchParams.get('category') || selectedCategoryFromRoute || loaderData?.categoryId || '';
 
   const {
     // 过滤器状态和操作
@@ -33,14 +38,14 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     toggleTag,
     
     // 数据
-    manufacturers,
+    manufacturers: filtersManufacturers,
     categories,
     regions,
     countries,
     
     // UI状态
     loading,
-    error,
+    error: filtersError,
     
     // 计算属性
     filteredTags,
@@ -51,19 +56,26 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     clearHistory,
   } = useManufacturerFilters({ onFactoryClick });
 
+  const [searchTerm, setSearchTerm] = useState(searchTermFromUrl);
+  const [categoryId, setCategoryId] = useState(categoryIdFromUrl);
+  const [loadingManufacturers, setLoadingManufacturers] = useState(false);
+  const [manufacturers, setManufacturers] = useState<Factory[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // 当从分类页面跳转来时，设置分类筛选器
+  useEffect(() => {
+    if (selectedCategoryFromRoute) {
+      updateFilter('categoryId', selectedCategoryFromRoute);
+      setCategoryId(selectedCategoryFromRoute);
+    }
+  }, [selectedCategoryFromRoute, updateFilter]);
+
   // 从URL参数或加载器数据设置初始搜索词
   useEffect(() => {
     if (searchTermFromUrl) {
       updateFilter('searchTerm', searchTermFromUrl);
     }
   }, [searchTermFromUrl, updateFilter]);
-
-  // 从路由状态设置初始分类
-  useEffect(() => {
-    if (selectedCategoryFromRoute) {
-      updateFilter('categoryId', selectedCategoryFromRoute);
-    }
-  }, [selectedCategoryFromRoute, updateFilter]);
 
   return (
     <div className="min-h-screen bg-white">
