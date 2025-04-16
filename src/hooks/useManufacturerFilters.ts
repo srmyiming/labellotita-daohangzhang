@@ -116,34 +116,47 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
   useEffect(() => {
     async function fetchBaseData() {
       try {
-        const [categoriesResult, regionsResult, countriesResult] = await Promise.all([
-          supabase.from('category_counts').select('*'),
-          supabase.from('regions').select('*'),
-          supabase.from('countries').select('*')
-        ]);
-
+        console.log('开始获取基础数据...');
+        
+        // 获取分类数据
+        const categoriesResult = await supabase.from('category_counts').select('*');
+        console.log('分类数据结果:', categoriesResult);
         if (categoriesResult.error) throw categoriesResult.error;
+
+        // 获取地区数据
+        const regionsResult = await supabase.from('regions').select('*');
+        console.log('地区数据结果:', regionsResult);
         if (regionsResult.error) throw regionsResult.error;
+
+        // 获取国家数据
+        const countriesResult = await supabase.from('countries').select('*');
+        console.log('国家数据结果:', countriesResult);
         if (countriesResult.error) throw countriesResult.error;
 
         setData(prev => ({
           ...prev,
-          categories: categoriesResult.data.map(category => ({
+          categories: categoriesResult.data?.map(category => ({
             id: category.id,
             name: category.name,
             icon: category.icon || 'box',
             count: category.manufacturer_count
-          })),
-          regions: regionsResult.data.map(region => ({
+          })) || [],
+          regions: regionsResult.data?.map(region => ({
             id: region.code,
             name: region.name,
             count: 0
-          })),
-          countries: countriesResult.data
+          })) || [],
+          countries: countriesResult.data || []
         }));
+
+        console.log('基础数据获取完成');
       } catch (error) {
-        console.error('Error fetching base data:', error);
-        toast.error('获取基础数据失败');
+        console.error('获取基础数据失败:', error);
+        setStatus(prev => ({
+          ...prev,
+          error: '获取基础数据失败，请刷新页面重试'
+        }));
+        toast.error('获取基础数据失败，请刷新页面重试');
       }
     }
 

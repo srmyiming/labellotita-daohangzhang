@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   createBrowserRouter, 
   RouterProvider, 
-  useNavigate,
-  Outlet
+  useNavigate
 } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -28,18 +27,66 @@ import { Factory } from './types';
 const SEARCH_HISTORY_KEY = 'search_history';
 const MAX_HISTORY_ITEMS = 10;
 
-function AppContent() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [showAllManufacturers, setShowAllManufacturers] = useState(false);
-  const [selectedFactory, setSelectedFactory] = useState<Factory | null>(null);
-  const [recommendedFactories, setRecommendedFactories] = useState<Factory[]>([]);
-  const [loading, setLoading] = useState(true);
+function useSearchHistory() {
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
     const savedHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
     return savedHistory ? JSON.parse(savedHistory) : [];
   });
+
+  const addToSearchHistory = (term: string) => {
+    if (!term.trim()) return;
+    
+    setSearchHistory(prev => {
+      const newHistory = [term, ...prev.filter(item => item !== term)].slice(0, 10);
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+  };
+
+  return {
+    searchHistory,
+    addToSearchHistory,
+    clearSearchHistory
+  };
+}
+
+function useFactories() {
+  const [recommendedFactories, setRecommendedFactories] = useState<Factory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRecommendedFactories() {
+      try {
+        const factories = await manufacturersApi.getRecommended();
+        setRecommendedFactories(factories);
+      } catch (error) {
+        console.error('Error fetching recommended factories:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchRecommendedFactories();
+  }, []);
+
+  return {
+    recommendedFactories,
+    loading
+  };
+}
+
+function AppContent() {
+  const { searchHistory, addToSearchHistory, clearSearchHistory } = useSearchHistory();
+  const { recommendedFactories, loading: factoriesLoading } = useFactories();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDetail, setShowDetail] = useState(false);
+  const [showAllManufacturers, setShowAllManufacturers] = useState(false);
+  const [selectedFactory, setSelectedFactory] = useState<Factory | null>(null);
   const navigate = useNavigate();
   
   // 搜索建议 - 根据当前工厂数据生成
@@ -98,51 +145,10 @@ function AppContent() {
     
     // 如果搜索词不为空,保存到历史记录
     if (term.trim()) {
-      saveToSearchHistory(term);
+      addToSearchHistory(term);
     }
   };
   
-  // 保存搜索历史
-  const saveToSearchHistory = (term: string) => {
-    setSearchHistory(prev => {
-      // 去重并置顶
-      const newHistory = [
-        term,
-        ...prev.filter(item => item !== term)
-      ].slice(0, MAX_HISTORY_ITEMS);
-      
-      // 保存到本地存储
-      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
-      return newHistory;
-    });
-  };
-  
-  // 清除搜索历史
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem(SEARCH_HISTORY_KEY);
-  };
-  
-  useEffect(() => {
-    const fetchRecommendedFactories = async () => {
-      try {
-        setLoading(true);
-        const data = await manufacturersApi.getRecommended();
-        setRecommendedFactories(data);
-        if (!selectedFactory && data.length > 0) {
-          setSelectedFactory(data[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching recommended factories:', error);
-        toast.error('获取推荐制造商失败');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecommendedFactories();
-  }, []);
-
   const handleFactoryClick = (factory: Factory) => {
     setSelectedFactory(factory);
     navigate(`/manufacturers/${factory.id}`);
@@ -181,11 +187,11 @@ function AppContent() {
             <h2 className="text-3xl font-bold text-center mb-12">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-600 to-red-600">
                 推荐制造商
-                {loading && <span className="ml-2">加载中...</span>}
+                {factoriesLoading && <span className="ml-2">加载中...</span>}
               </span>
             </h2>
             
-            {loading ? (
+            {factoriesLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-white rounded-xl p-8 shadow-md animate-pulse">

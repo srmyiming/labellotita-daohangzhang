@@ -8,7 +8,7 @@ import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters'
 import ManufacturerSearch from '../components/manufacturer/ManufacturerSearch';
 import ManufacturerListItem from '../components/manufacturer/ManufacturerListItem';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, manufacturersApi } from '../lib/supabase';
 
 interface ManufacturerListProps {
   onFactoryClick: (factory: Factory) => void;
@@ -58,9 +58,6 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
 
   const [searchTerm, setSearchTerm] = useState(searchTermFromUrl);
   const [categoryId, setCategoryId] = useState(categoryIdFromUrl);
-  const [loadingManufacturers, setLoadingManufacturers] = useState(false);
-  const [manufacturers, setManufacturers] = useState<Factory[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   // 当从分类页面跳转来时，设置分类筛选器
   useEffect(() => {
@@ -76,6 +73,23 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
       updateFilter('searchTerm', searchTermFromUrl);
     }
   }, [searchTermFromUrl, updateFilter]);
+
+  useEffect(() => {
+    async function checkData() {
+      try {
+        console.log('开始检查数据...');
+        const allManufacturers = await manufacturersApi.getAll();
+        console.log('所有制造商:', allManufacturers);
+        
+        const tables = await supabase.from('information_schema.tables').select('*');
+        console.log('数据库表:', tables);
+      } catch (error) {
+        console.error('数据检查失败:', error);
+      }
+    }
+    
+    checkData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -117,7 +131,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
             <div className="mt-6 mb-8 pb-6 border-b">
               <p className="text-gray-600">
                 找到 <span className="font-semibold text-gray-900">
-                  {manufacturers.length}
+                  {filtersManufacturers.length}
                 </span> 家制造商
               </p>
             </div>
@@ -127,13 +141,13 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
-            ) : error ? (
+            ) : filtersError ? (
               <div className="text-center py-12">
-                <p className="text-red-500 text-lg">{error}</p>
+                <p className="text-red-500 text-lg">{filtersError}</p>
               </div>
-            ) : manufacturers.length > 0 ? (
+            ) : filtersManufacturers.length > 0 ? (
               <div className="space-y-4">
-                {manufacturers.map(factory => (
+                {filtersManufacturers.map(factory => (
                   <ManufacturerListItem
                     key={factory.id}
                     factory={factory}

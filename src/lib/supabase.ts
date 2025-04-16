@@ -35,6 +35,18 @@ export const supabase = createClient<Database>(
 
 // 制造商相关API
 export const manufacturersApi = {
+  // 获取所有制造商
+  getAll: async () => {
+    console.log('开始获取所有制造商...');
+    const { data, error } = await supabase
+      .from('manufacturers')
+      .select('*');
+    
+    console.log('制造商数据结果:', { data, error });
+    if (error) throw error;
+    return data;
+  },
+
   // 获取推荐制造商列表
   getRecommended: async () => {
     const { data, error } = await supabase
