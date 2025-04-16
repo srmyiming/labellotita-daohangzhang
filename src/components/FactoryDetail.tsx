@@ -66,7 +66,16 @@ export default function FactoryDetail({ factory, onBack, loading = false }: Fact
               
               <FactoryBasicInfo 
                 description={factory.description}
-                tags={factory.manufacturer_tags?.map(mt => mt.tags.name)}
+                manufacturer_tags={factory.manufacturer_tags}
+                manufacturer_certifications={factory.manufacturer_certifications}
+                foundedYear={factory.founded_year}
+                employeeCount={factory.employee_count}
+                annualProduction={factory.annual_production}
+                dailyProduction={factory.daily_production}
+                storageCapacity={factory.storage_capacity}
+                productionLines={factory.production_lines}
+                updatedAt={factory.updated_at}
+                manufacturer_export_countries={factory.manufacturer_export_countries}
               />
 
               <FactoryTabs factory={factory} />
