@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { 
   createBrowserRouter, 
@@ -6,7 +5,7 @@ import {
   useNavigate
 } from 'react-router-dom';
 import Hero from './components/Hero';
-import { ArrowRight } from 'lucide-react';
+
 import CategoryList from './components/CategoryList';
 import FactoryCard from './components/FactoryCard';
 import FactoryDetail from './components/FactoryDetail';
@@ -110,7 +109,7 @@ function AppContent() {
   const { recommendedFactories, loading: factoriesLoading } = useFactories();
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetail, setShowDetail] = useState(false);
-  const [showAllManufacturers, setShowAllManufacturers] = useState(false);
+  const [showAllManufacturers] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState<Factory | null>(null);
   const navigate = useNavigate();
   

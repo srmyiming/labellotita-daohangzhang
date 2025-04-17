@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import { Factory } from '../types';
 import { useManufacturerFilters } from '../hooks/useManufacturerFilters';
@@ -37,7 +37,6 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     regions,
     countries,
     loading,
-    error,
     filteredTags,
     searchSuggestions,
     searchHistory,
