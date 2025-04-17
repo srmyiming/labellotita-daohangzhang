@@ -100,16 +100,6 @@ export default function Header({
               制造商
             </Link>
             <Link 
-              to="/static-factory" 
-              className={`font-medium transition-colors ${
-                location.pathname === '/static-factory' 
-                  ? 'text-primary' 
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
-            >
-              静态示例
-            </Link>
-            <Link 
               to="/about" 
               className={`font-medium transition-colors ${
                 location.pathname === '/about' 
@@ -232,12 +222,6 @@ export default function Header({
                     className="flex items-center gap-2 px-2 py-4 hover:bg-accent rounded-lg transition-colors"
                   >
                     制造商
-                  </Link>
-                  <Link 
-                    to="/static-factory" 
-                    className="flex items-center gap-2 px-2 py-4 hover:bg-accent rounded-lg transition-colors"
-                  >
-                    静态示例
                   </Link>
                   <Link 
                     to="/about" 

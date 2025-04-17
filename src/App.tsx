@@ -15,7 +15,6 @@ import Footer from './components/Footer';
 import ManufacturerCTA from './components/ManufacturerCTA';
 import ManufacturerList from './pages/ManufacturerList';
 import ManufacturerDetailPage from './pages/ManufacturerDetailPage';
-import StaticFactoryDetail from './pages/StaticFactoryDetail';
 import Categories from './pages/Categories';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -259,10 +258,6 @@ const router = createBrowserRouter([
   {
     path: "/manufacturers/:id",
     element: <ManufacturerDetailPage />,
-  },
-  {
-    path: "/static-factory",
-    element: <StaticFactoryDetail />,
   },
   {
     path: "/categories",
