@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Factory } from '../../types';
 import CatalogTab from './tabs/CatalogTab';
