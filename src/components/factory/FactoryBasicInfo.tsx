@@ -1,6 +1,42 @@
 import { Calendar, Users, Clock, Globe, Factory, Box, Scale, Truck, Award, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 
+// 计算相对时间函数
+function getRelativeTimeString(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    if (isNaN(date.getTime())) {
+      return '未知时间';
+    }
+    
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    const weeks = Math.floor(diffDays / 7);
+    const remainingDays = diffDays % 7;
+    
+    if (weeks === 0) {
+      return remainingDays === 0 ? '今天' : `${remainingDays}天前`;
+    } else if (weeks < 4) {
+      return `${weeks}周${remainingDays > 0 ? ` ${remainingDays}天` : ''}前`;
+    } else {
+      const months = Math.floor(diffDays / 30);
+      if (months < 12) {
+        return `${months}个月前`;
+      } else {
+        const years = Math.floor(months / 12);
+        const remainingMonths = months % 12;
+        return `${years}年${remainingMonths > 0 ? ` ${remainingMonths}个月` : ''}前`;
+      }
+    }
+  } catch (e) {
+    console.error('日期格式化错误:', e);
+    return '未知时间';
+  }
+}
+
 interface FactoryBasicInfoProps {
   description: string;
   manufacturer_tags?: Array<{ tags: { name: string } }>;
@@ -149,9 +185,9 @@ export function FactoryBasicInfo({
                 <div>
                   <p className="font-medium">{cert.name}</p>
                   <div className="text-sm text-gray-500">
-                    <p>发证日期: {new Date(cert.issue_date).toLocaleDateString()}</p>
+                    <p>发证日期: {new Date(cert.issue_date).toLocaleDateString('zh-CN')}</p>
                     {cert.expiry_date && (
-                      <p>有效期至: {new Date(cert.expiry_date).toLocaleDateString()}</p>
+                      <p>有效期至: {new Date(cert.expiry_date).toLocaleDateString('zh-CN')}</p>
                     )}
                   </div>
                 </div>
@@ -164,9 +200,9 @@ export function FactoryBasicInfo({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
         {foundedYear && (
           <div className="flex items-center space-x-3">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <Calendar className="h-5 w-5 text-red-600" />
             <div>
-              <p className="text-sm text-muted-foreground">成立于</p>
+              <p className="text-sm text-gray-500">成立于</p>
               <p className="font-medium">{foundedYear}</p>
             </div>
           </div>
@@ -174,9 +210,9 @@ export function FactoryBasicInfo({
         
         {employeeCount && (
           <div className="flex items-center space-x-3">
-            <Users className="h-5 w-5 text-muted-foreground" />
+            <Users className="h-5 w-5 text-red-600" />
             <div>
-              <p className="text-sm text-muted-foreground">员工数量</p>
+              <p className="text-sm text-gray-500">员工数量</p>
               <p className="font-medium">{employeeCount}</p>
             </div>
           </div>
@@ -184,18 +220,18 @@ export function FactoryBasicInfo({
         
         {updatedAt && (
           <div className="flex items-center space-x-3">
-            <Clock className="h-5 w-5 text-muted-foreground" />
+            <Clock className="h-5 w-5 text-red-600" />
             <div>
-              <p className="text-sm text-muted-foreground">最近更新</p>
-              <p className="font-medium">{updatedAt}</p>
+              <p className="text-sm text-gray-500">最近更新</p>
+              <p className="font-medium">{getRelativeTimeString(updatedAt)}</p>
             </div>
           </div>
         )}
       </div>
 
       {manufacturer_export_countries && manufacturer_export_countries.length > 0 && (
-        <div className="pt-6">
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+        <div className="pt-6 mt-4 border-t border-gray-100">
+          <h3 className="text-base font-semibold mb-3 flex items-center gap-2 mt-4">
             <Globe className="h-5 w-5 text-red-600" />
             出口国家
           </h3>
