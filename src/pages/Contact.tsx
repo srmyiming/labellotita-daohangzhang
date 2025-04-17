@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { Mail, Phone, MapPin, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
@@ -27,8 +25,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header onSearch={() => {}} />
+    <div className="bg-background">
       
       {/* 主横幅 */}
       <div className="relative bg-gradient-to-r from-red-600 to-yellow-600 py-20">
@@ -202,7 +199,6 @@ export default function Contact() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { 
   Building2, 
   Globe2, 
@@ -25,8 +23,7 @@ export default function About() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header onSearch={() => {}} />
+    <div className="bg-background">
       
       {/* 主横幅 - 使用更现代的设计 */}
       <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-yellow-500 py-32 overflow-hidden">
@@ -275,8 +272,6 @@ export default function About() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

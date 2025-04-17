@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+// import Header from '../components/Header';
+// import Footer from '../components/Footer';
 import { Factory } from '../types';
 import { staticFactoryData } from '../data';
 import FactoryDetail from '../components/factory/FactoryDetail';
@@ -46,13 +46,11 @@ export default function StaticFactoryDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={() => {}} />
       <FactoryDetail 
         factory={staticFactory} 
         onBack={() => navigate('/')} 
         loading={false}
       />
-      <Footer />
     </div>
   );
 }

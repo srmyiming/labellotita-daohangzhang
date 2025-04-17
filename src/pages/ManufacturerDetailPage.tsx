@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FactoryDetail from '../components/FactoryDetail';
 // import FactoryLocation from '../components/FactoryLocation';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+// import Header from '../components/Header';
+// import Footer from '../components/Footer';
 import { Factory } from '../types';
 import { manufacturersApi } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -112,7 +112,6 @@ export default function ManufacturerDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={() => {}} />
       <div className="container mx-auto px-4 py-8">
         <FactoryDetail 
           factory={factory} 
@@ -120,7 +119,6 @@ export default function ManufacturerDetailPage() {
           loading={loading}
         />
       </div>
-      <Footer />
     </div>
   );
 }

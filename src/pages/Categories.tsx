@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+// import Header from '../components/Header';
+// import Footer from '../components/Footer';
 import { Beef, Box, Droplet, Cookie, Wine, Cake, Milk, ArrowRight, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Category } from '../types';
@@ -68,7 +68,7 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={() => {}} />
+      {/* 页眉已在 Layout 组件中 */}
       
       {/* 主横幅 */}
       <div className="relative bg-gradient-to-r from-red-600 to-yellow-600 py-20">
@@ -174,7 +174,7 @@ export default function Categories() {
           </div>
         </div>
       </main>
-      <Footer />
+      {/* 页脚已在 Layout 组件中 */}
     </div>
   );
 }

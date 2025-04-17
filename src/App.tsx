@@ -155,12 +155,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header 
-        onSearch={handleSearch} 
-        searchHistory={searchHistory}
-        suggestions={searchSuggestions}
-      />
-      <FloatingContact />
       
       {showDetail && selectedFactory && (
         <FactoryDetail 
@@ -180,7 +174,7 @@ function AppContent() {
             searchHistory={searchHistory} 
             suggestions={searchSuggestions} 
           />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <CategoryList />
             
             <h2 className="text-3xl font-bold text-center mb-12">
@@ -229,48 +223,42 @@ function AppContent() {
                 </p>
               </div>
             )}
-          </main>
+          </div>
           <ManufacturerCTA />
         </>
       )}
-      <Footer />
     </div>
   );
 }
 
+import Layout from './components/Layout';
+import StaticFactoryDetail from './pages/StaticFactoryDetail';
+
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <AppContent />,
-  },
-  {
-    path: "/manufacturers",
-    loader: ({ request }) => {
-      // 从URL参数中获取搜索词
-      const url = new URL(request.url);
-      const searchTerm = url.searchParams.get('search') || '';
-      return { searchTerm };
-    },
-    element: <ManufacturerList onFactoryClick={(factory: Factory) => {
-      window.location.href = `/manufacturers/${factory.id}`;
-    }} />,
-  },
-  {
-    path: "/manufacturers/:id",
-    element: <ManufacturerDetailPage />,
-  },
-  {
-    path: "/categories",
-    element: <Categories />,
-  },
-  {
-    path: "/about",
-    element: <About />,
-  },
-  {
-    path: "/contact",
-    element: <Contact />,
-  },
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <AppContent /> },
+      { 
+        path: 'manufacturers',
+        loader: ({ request }) => {
+          // 从URL参数中获取搜索词
+          const url = new URL(request.url);
+          const searchTerm = url.searchParams.get('search') || '';
+          return { searchTerm };
+        },
+        element: <ManufacturerList onFactoryClick={(factory: Factory) => {
+          window.location.href = `/manufacturers/${factory.id}`;
+        }} />
+      },
+      { path: 'manufacturers/:id', element: <ManufacturerDetailPage /> },
+      { path: 'static-factory', element: <StaticFactoryDetail /> },
+      { path: 'categories', element: <Categories /> },
+      { path: 'about', element: <About /> },
+      { path: 'contact', element: <Contact /> }
+    ]
+  }
 ]);
 
 function App() {
