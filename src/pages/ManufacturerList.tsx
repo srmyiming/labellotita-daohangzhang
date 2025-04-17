@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
-
-
 import { Factory } from '../types';
 import { useManufacturerFilters, Filters } from '../hooks/useManufacturerFilters';
 import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters';
@@ -25,157 +23,115 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   const loaderData = useLoaderData() as LoaderData;
   
   // 从路由状态和URL参数获取初始值
-  const { selectedCategory: categoryFromRoute, fromCategories } = location.state || {};
+  const { selectedCategory: categoryFromRoute } = location.state || {};
   const searchTermFromUrl = searchParams.get('search') || loaderData?.searchTerm || '';
   const categoryIdFromUrl = searchParams.get('category') || categoryFromRoute || loaderData?.categoryId || '';
 
+  // 使用自定义钩子管理筛选状态
   const {
-    // 过滤器状态和操作
     filters,
-    updateFilter,
-    resetFilters,
-    toggleTag,
-    
-    // 数据
-    manufacturers: filtersManufacturers,
-    categories,
-    regions,
-    countries,
-    
-    // UI状态
+    setFilters,
+    filteredFactories,
     loading,
-    error: filtersError,
-    
-    // 计算属性
-    filteredTags,
-    searchSuggestions,
-
-    // 搜索历史
-    searchHistory,
-    clearHistory,
-  } = useManufacturerFilters({ onFactoryClick });
-
-  // 本地状态管理
-  const [localFilters, setLocalFilters] = useState({
-    searchTerm: searchTermFromUrl,
-    categoryId: categoryIdFromUrl
+    resetFilters,
+    availableCategories,
+    availableRegions,
+    availableExportCountries,
+    availableTags
+  } = useManufacturerFilters({
+    initialFilters: {
+      searchTerm: searchTermFromUrl,
+      category: categoryIdFromUrl,
+      region: '',
+      exportCountry: '',
+      tags: []
+    }
   });
 
-  // 初始化过滤器
-  useEffect(() => {
-    if (searchTermFromUrl) {
-      updateFilter('searchTerm', searchTermFromUrl);
-    }
-    if (categoryIdFromUrl) {
-      updateFilter('categoryId', categoryIdFromUrl);
-    }
-  }, []);
-
-  // 处理过滤器更新
-  const handleFilterChange = (key: keyof Filters, value: string | null) => {
-    if (key === 'searchTerm' || key === 'categoryId') {
-      setLocalFilters(prev => ({ ...prev, [key]: value }));
-    }
-    updateFilter(key, value);
-    
-    // 更新 URL 参数
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (value) {
-      newSearchParams.set(key === 'searchTerm' ? 'search' : key, value);
-    } else {
-      newSearchParams.delete(key === 'searchTerm' ? 'search' : key);
-    }
-    window.history.replaceState(null, '', `${location.pathname}?${newSearchParams}`);
-  };
-
-  // 处理重置
-  const handleReset = () => {
-    setLocalFilters({
-      searchTerm: '',
-      categoryId: ''
-    });
-    resetFilters();
-    window.history.replaceState(null, '', location.pathname);
+  // 搜索处理函数
+  const handleSearch = (searchTerm: string) => {
+    setFilters(prev => ({ ...prev, searchTerm }));
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="py-8">
-          <h1 className="text-4xl font-bold text-center">食品制造商</h1>
-          <p className="text-gray-600 mt-4 text-center text-lg">
-            发现西班牙最好的食品制造商
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 主横幅 */}
+      <div className="relative bg-gradient-to-r from-red-600 to-yellow-600 py-20">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center text-white">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              食品制造商
+            </h1>
+            <p className="text-xl max-w-2xl mx-auto">
+              发现西班牙最好的食品制造商
+            </p>
+          </div>
         </div>
+      </div>
 
-        <div className="flex gap-12">
-          {/* 左侧筛选栏 */}
-          <ManufacturerFilters
-            categories={categories}
-            regions={regions}
-            countries={countries}
-            filters={{
-              ...filters,
-              searchTerm: localFilters.searchTerm,
-              categoryId: localFilters.categoryId
-            }}
-            filteredTags={filteredTags}
-            onFilterChange={handleFilterChange}
-            onTagToggle={toggleTag}
-            onReset={handleReset}
-          />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* 筛选侧边栏 */}
+          <div className="w-full lg:w-1/4 space-y-6">
+            <ManufacturerFilters 
+              filters={filters}
+              setFilters={setFilters}
+              resetFilters={resetFilters}
+              availableCategories={availableCategories}
+              availableRegions={availableRegions}
+              availableExportCountries={availableExportCountries}
+              availableTags={availableTags}
+            />
+          </div>
 
-          {/* 右侧内容区 */}
-          <div className="flex-1">
-            {/* 搜索框 */}
+          {/* 主内容区 */}
+          <div className="w-full lg:w-3/4">
             <ManufacturerSearch 
-              value={localFilters.searchTerm}
-              onChange={(term) => handleFilterChange('searchTerm', term)}
-              searchHistory={searchHistory}
-              onClearHistory={clearHistory}
-              suggestions={searchSuggestions}
+              searchTerm={filters.searchTerm}
+              onSearch={handleSearch}
             />
             
-            {/* 结果统计 */}
-            <div className="mt-6 mb-8 pb-6 border-b">
-              <p className="text-gray-600">
-                找到 <span className="font-semibold text-gray-900">
-                  {filtersManufacturers.length}
-                </span> 家制造商
-              </p>
-            </div>
-
-            {/* 制造商列表 */}
+            <p className="text-sm text-gray-500 mt-4 mb-6">
+              找到 {filteredFactories.length} 家制造商
+            </p>
+            
             {loading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
-            ) : filtersError ? (
-              <div className="text-center py-12">
-                <p className="text-red-500 text-lg">{filtersError}</p>
-              </div>
-            ) : filtersManufacturers.length > 0 ? (
-              <div className="space-y-4">
-                {filtersManufacturers.map(factory => (
-                  <ManufacturerListItem
+            ) : filteredFactories.length > 0 ? (
+              <div className="space-y-6">
+                {filteredFactories.map(factory => (
+                  <ManufacturerListItem 
                     key={factory.id}
                     factory={factory}
-                    categories={categories}
                     onClick={() => onFactoryClick(factory)}
                   />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">没有找到符合条件的制造商</p>
+              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                <img 
+                  src="/images/no-results.svg" 
+                  alt="没有找到结果" 
+                  className="w-32 h-32 mx-auto mb-4 opacity-70"
+                />
+                <h3 className="text-xl font-medium text-gray-900 mb-2">没有找到匹配的制造商</h3>
+                <p className="text-gray-500 mb-4">
+                  尝试调整您的筛选条件或搜索词，以查看更多结果。
+                </p>
+                <button
+                  onClick={resetFilters}
+                  className="text-red-600 font-medium hover:text-red-700"
+                >
+                  重置所有筛选条件
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
-      
     </div>
   );
 }

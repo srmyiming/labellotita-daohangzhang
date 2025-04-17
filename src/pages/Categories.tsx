@@ -100,64 +100,51 @@ export default function Categories() {
           </div>
         </div>
 
+        {/* 分类列表 */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl p-8 shadow-md animate-pulse">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full mb-6"></div>
-                  <div className="h-6 bg-gray-200 rounded w-32 mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700"></div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCategories.map((category) => {
+        ) : filteredCategories.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredCategories.map(category => {
               const Icon = iconMap[category.icon as keyof typeof iconMap] || Box;
+              
               return (
-                <button
+                <div 
                   key={category.id}
                   onClick={() => handleCategoryClick(category.id)}
-                  className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
+                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer group"
                 >
-                  <div className="flex flex-col items-center">
-                    <div className="mb-6 p-4 bg-red-50 rounded-full group-hover:bg-red-100 transition-colors">
-                      <Icon className="w-12 h-12 text-red-600" />
+                  <div className="p-6 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
+                      <Icon className="w-8 h-8 text-red-600" />
                     </div>
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-3">
-                      {category.name}
-                    </h3>
-                    <p className={`mb-6 ${category.count > 0 ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {category.count} 家制造商
-                    </p>
-                    <div className="flex items-center text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="mr-2">查看制造商</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900">{category.name}</h3>
+                    <p className="text-sm text-gray-500 mb-4">{category.count} 家制造商</p>
+                    <div className="flex items-center text-red-600 text-sm font-medium">
+                      <span>查看制造商</span>
+                      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
-        )}
-        
-        {!loading && filteredCategories.length === 0 && (
+        ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">
-              没有找到匹配的分类
-            </p>
-            <Button
-              variant="outline"
+            <p className="text-gray-500 mb-4">没有找到匹配的分类</p>
+            <Button 
               onClick={() => setSearchTerm('')}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               清除搜索
             </Button>
           </div>
         )}
-
-        <div className="mt-16 bg-gradient-to-r from-red-50 to-yellow-50 rounded-2xl p-8 border border-red-100/50">
+        
+        {/* 联系我们 CTA */}
+        <div className="mt-20 py-12 px-6 bg-gray-50 rounded-2xl">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl font-semibold mb-4 text-gray-900">
               找不到您需要的分类？
