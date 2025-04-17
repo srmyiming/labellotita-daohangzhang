@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import { Factory } from '../types';
 import BreadcrumbNav from './factory/BreadcrumbNav';
 import FactoryBasicInfo from './factory/FactoryBasicInfo';
@@ -9,11 +9,9 @@ import {
   CheckCircle, 
   Award, 
   MapPin, 
-  Tag, 
-  Mail, 
-  Phone, 
-  Globe, 
-  User as ContactIcon 
+  Tag,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -180,50 +178,6 @@ export default function FactoryDetail({ factory, onBack, loading = false }: Fact
             <div className="w-full lg:w-[360px] space-y-6 lg:pt-0 pt-4">
               <div className="sticky top-6">
                 <PurchaseServiceCard />
-                
-                {/* 添加联系信息卡片 */}
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                    <ContactIcon className="h-5 w-5 mr-2 text-red-500" />
-                    联系信息
-                  </h3>
-                  <div className="space-y-4">
-                    {factory.phone && (
-                      <div className="flex items-start">
-                        <Phone className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-500">电话</p>
-                          <p className="text-gray-700">{factory.phone}</p>
-                        </div>
-                      </div>
-                    )}
-                    {factory.email && (
-                      <div className="flex items-start">
-                        <Mail className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-500">邮箱</p>
-                          <p className="text-gray-700">{factory.email}</p>
-                        </div>
-                      </div>
-                    )}
-                    {factory.website && (
-                      <div className="flex items-start">
-                        <Globe className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-500">网站</p>
-                          <a 
-                            href={factory.website.startsWith('http') ? factory.website : `https://${factory.website}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-red-600 hover:underline"
-                          >
-                            {factory.website}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
