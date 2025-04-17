@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   createBrowserRouter, 
   RouterProvider, 
@@ -53,10 +54,43 @@ function useFactories() {
     async function fetchRecommendedFactories() {
       try {
         setLoading(true);
-        const factories = await manufacturersApi.getRecommended();
-        setRecommendedFactories(factories);
+        const rawData = await manufacturersApi.getRecommended();
+        
+        // 处理从数据库获取的原始数据
+        const processedFactories = rawData.map((factory: any) => {
+          // 处理工厂图片
+          const factoryImages = factory.manufacturer_images
+            ?.filter((img: any) => img.type === 'factory')
+            .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+            .map((img: any) => img.url) ?? [];
+          
+          // 处理分类信息
+          const categoryRelation = factory.manufacturer_category_relations?.[0];
+          const categoryName = categoryRelation?.manufacturer_categories?.name || '';
+          
+          // 处理产品信息
+          const products = factory.manufacturer_products?.map((p: any) => p.name) || [];
+          
+          // 处理标签信息
+          const tags = factory.manufacturer_tags?.map((t: any) => t.tags?.name) || [];
+          
+          // 构建处理后的工厂对象
+          return {
+            ...factory,
+            factoryImages,
+            imageUrl: factoryImages[0] || null, // 设置主图为第一张工厂图片
+            category: factory.category || '',
+            categoryName,
+            products,
+            tags,
+            productCount: products.length
+          };
+        });
+        
+        console.log('处理后的推荐工厂数据:', processedFactories);
+        setRecommendedFactories(processedFactories);
       } catch (error) {
-        console.error('Error fetching recommended factories:', error);
+        console.error('获取推荐工厂数据失败:', error);
       } finally {
         setLoading(false);
       }

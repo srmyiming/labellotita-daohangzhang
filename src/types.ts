@@ -8,6 +8,7 @@ export interface Factory {
   id: string;
   name: string;
   category: string;
+  categoryName?: string; // 分类名称
   description: string;
   address: string;
   city: string;

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import { Factory } from '../types';
-import { useManufacturerFilters, Filters } from '../hooks/useManufacturerFilters';
+import { useManufacturerFilters } from '../hooks/useManufacturerFilters';
 import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters';
 import ManufacturerSearch from '../components/manufacturer/ManufacturerSearch';
 import ManufacturerListItem from '../components/manufacturer/ManufacturerListItem';
 import { Loader2 } from 'lucide-react';
-import { supabase, manufacturersApi } from '../lib/supabase';
 
 interface ManufacturerListProps {
   onFactoryClick: (factory: Factory) => void;
@@ -30,28 +29,30 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   // 使用自定义钩子管理筛选状态
   const {
     filters,
-    setFilters,
-    filteredFactories,
-    loading,
+    updateFilter,
     resetFilters,
-    availableCategories,
-    availableRegions,
-    availableExportCountries,
-    availableTags
-  } = useManufacturerFilters({
-    initialFilters: {
-      searchTerm: searchTermFromUrl,
-      category: categoryIdFromUrl,
-      region: '',
-      exportCountry: '',
-      tags: []
-    }
-  });
+    toggleTag,
+    manufacturers,
+    categories,
+    regions,
+    countries,
+    loading,
+    error,
+    filteredTags,
+    searchSuggestions,
+    searchHistory,
+    clearHistory
+  } = useManufacturerFilters({ onFactoryClick });
 
-  // 搜索处理函数
-  const handleSearch = (searchTerm: string) => {
-    setFilters(prev => ({ ...prev, searchTerm }));
-  };
+  // 初始化搜索条件
+  useEffect(() => {
+    if (searchTermFromUrl) {
+      updateFilter('searchTerm', searchTermFromUrl);
+    }
+    if (categoryIdFromUrl) {
+      updateFilter('categoryId', categoryIdFromUrl);
+    }
+  }, [searchTermFromUrl, categoryIdFromUrl, updateFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,37 +76,42 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
           {/* 筛选侧边栏 */}
           <div className="w-full lg:w-1/4 space-y-6">
             <ManufacturerFilters 
+              categories={categories}
+              regions={regions}
+              countries={countries}
               filters={filters}
-              setFilters={setFilters}
-              resetFilters={resetFilters}
-              availableCategories={availableCategories}
-              availableRegions={availableRegions}
-              availableExportCountries={availableExportCountries}
-              availableTags={availableTags}
+              filteredTags={filteredTags}
+              onFilterChange={updateFilter}
+              onTagToggle={toggleTag}
+              onReset={resetFilters}
             />
           </div>
 
           {/* 主内容区 */}
           <div className="w-full lg:w-3/4">
             <ManufacturerSearch 
-              searchTerm={filters.searchTerm}
-              onSearch={handleSearch}
+              value={filters.searchTerm}
+              onChange={(term) => updateFilter('searchTerm', term)}
+              searchHistory={searchHistory}
+              onClearHistory={clearHistory}
+              suggestions={searchSuggestions}
             />
             
             <p className="text-sm text-gray-500 mt-4 mb-6">
-              找到 {filteredFactories.length} 家制造商
+              找到 {manufacturers.length} 家制造商
             </p>
             
             {loading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-red-600" />
               </div>
-            ) : filteredFactories.length > 0 ? (
+            ) : manufacturers.length > 0 ? (
               <div className="space-y-6">
-                {filteredFactories.map(factory => (
+                {manufacturers.map((factory: Factory) => (
                   <ManufacturerListItem 
                     key={factory.id}
                     factory={factory}
+                    categories={categories}
                     onClick={() => onFactoryClick(factory)}
                   />
                 ))}
