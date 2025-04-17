@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 西班牙轮廓 -->
+  <path 
+    d="M100,200 C150,150 200,100 300,120 C400,140 500,130 600,150 C700,170 750,250 720,350 C690,450 600,500 500,520 C400,540 300,530 200,480 C100,430 50,300 100,200 Z"
+    fill="#e6e6e6"
+    stroke="#cccccc"
+    stroke-width="2"
+  />
+  
+  <!-- 马德里地区 (高亮显示) -->
+  <path 
+    d="M350,290 C370,280 400,285 410,305 C420,325 415,350 395,360 C375,370 350,365 340,345 C330,325 330,300 350,290 Z"
+    fill="#D32F2F"
+    stroke="#B71C1C"
+    stroke-width="2"
+  />
+  
+  <!-- 其他主要城市 (点) -->
+  <circle cx="200" cy="350" r="8" fill="#555" /> <!-- 巴塞罗那 -->
+  <circle cx="150" cy="450" r="8" fill="#555" /> <!-- 瓦伦西亚 -->
+  <circle cx="550" cy="450" r="8" fill="#555" /> <!-- 塞维利亚 -->
+  <circle cx="650" cy="250" r="8" fill="#555" /> <!-- 毕尔巴鄂 -->
+  
+  <!-- 标注 -->
+  <text x="350" y="330" font-family="Arial" font-size="14" fill="#fff" text-anchor="middle">马德里</text>
+  <text x="200" y="370" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">巴塞罗那</text>
+  <text x="150" y="470" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">瓦伦西亚</text>
+  <text x="550" y="470" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">塞维利亚</text>
+  <text x="650" y="270" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">毕尔巴鄂</text>
+</svg> 

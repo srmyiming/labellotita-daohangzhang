@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 西班牙轮廓 -->
+  <path 
+    d="M100,200 C150,150 200,100 300,120 C400,140 500,130 600,150 C700,170 750,250 720,350 C690,450 600,500 500,520 C400,540 300,530 200,480 C100,430 50,300 100,200 Z"
+    fill="#e6e6e6"
+    stroke="#cccccc"
+    stroke-width="2"
+  />
+  
+  <!-- 卡斯蒂利亚地区 (高亮显示) -->
+  <path 
+    d="M250,250 C300,230 350,240 400,250 C450,260 480,300 470,350 C460,400 420,430 370,440 C320,450 270,430 240,390 C210,350 200,270 250,250 Z"
+    fill="#4CAF50"
+    stroke="#2E7D32"
+    stroke-width="2"
+  />
+  
+  <!-- 其他主要城市 (点) -->
+  <circle cx="200" cy="350" r="8" fill="#555" /> <!-- 巴塞罗那 -->
+  <circle cx="150" cy="450" r="8" fill="#555" /> <!-- 瓦伦西亚 -->
+  <circle cx="550" cy="450" r="8" fill="#555" /> <!-- 塞维利亚 -->
+  <circle cx="650" cy="250" r="8" fill="#555" /> <!-- 毕尔巴鄂 -->
+  <circle cx="370" cy="330" r="8" fill="#fff" stroke="#2E7D32" stroke-width="2" /> <!-- 拉曼恰 -->
+  
+  <!-- 标注 -->
+  <text x="350" y="330" font-family="Arial" font-size="14" fill="#fff" text-anchor="middle">卡斯蒂利亚</text>
+  <text x="370" y="350" font-family="Arial" font-size="12" fill="#fff" text-anchor="middle">拉曼恰</text>
+  <text x="200" y="370" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">巴塞罗那</text>
+  <text x="150" y="470" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">瓦伦西亚</text>
+  <text x="550" y="470" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">塞维利亚</text>
+  <text x="650" y="270" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">毕尔巴鄂</text>
+</svg> 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FactoryDetail from '../components/FactoryDetail';
+// import FactoryLocation from '../components/FactoryLocation';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Factory } from '../types';
@@ -24,23 +25,22 @@ export default function ManufacturerDetailPage() {
       
       try {
         setLoading(true);
-        const data = await manufacturersApi.getById(id);
-        console.log('获取到的工厂数据:', {
-          基本信息: {
-            id: data.id,
-            name: data.name,
-            description: data.description,
-          },
-          生产能力: {
-            annual_production: data.annual_production,
-            daily_production: data.daily_production,
-            storage_capacity: data.storage_capacity,
-            production_lines: data.production_lines,
-          },
-          认证信息: data.manufacturer_certifications,
-          出口国家: data.manufacturer_export_countries,
-        });
-        setFactory(data);
+        const rawData = await manufacturersApi.getById(id);
+        
+        // Process images
+        const factoryImages = rawData.manufacturer_images
+          ?.filter((img: { type: string; }) => img.type === 'factory')
+          .sort((a: { order?: number | null }, b: { order?: number | null }) => (a.order ?? 0) - (b.order ?? 0))
+          .map((img: { url: string; }) => img.url) ?? [];
+
+        // Construct the final factory object
+        const processedData: Factory = {
+          ...rawData,
+          factoryImages: factoryImages,
+        };
+        
+        console.log('获取并处理后的工厂数据:', processedData); // Log processed data
+        setFactory(processedData);
       } catch (error) {
         console.error('获取工厂数据失败:', error);
         toast.error('获取制造商信息失败');
@@ -113,11 +113,13 @@ export default function ManufacturerDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header onSearch={() => {}} />
-      <FactoryDetail 
-        factory={factory} 
-        onBack={() => window.history.back()} 
-        loading={loading}
-      />
+      <div className="container mx-auto px-4 py-8">
+        <FactoryDetail 
+          factory={factory} 
+          onBack={() => window.history.back()} 
+          loading={loading}
+        />
+      </div>
       <Footer />
     </div>
   );
