@@ -138,13 +138,13 @@ function AppContent() {
     return suggestions;
   }, [searchTerm, recommendedFactories]);
   
-  // 处理搜索词更新,保存到历史记录
+  // 处理搜索词更新: 保存历史并导航到制造商列表
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    
-    // 如果搜索词不为空,保存到历史记录
     if (term.trim()) {
       addToSearchHistory(term);
+      // 跳转到制造商列表页并携带查询参数
+      navigate(`/manufacturers?search=${encodeURIComponent(term)}`);
     }
   };
   

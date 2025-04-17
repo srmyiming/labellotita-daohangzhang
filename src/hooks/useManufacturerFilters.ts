@@ -219,7 +219,8 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
         // 如果有搜索条件,添加搜索过滤
         if (filters.searchTerm) {
           const searchTerm = filters.searchTerm.trim();
-          query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,manufacturer_products.name.ilike.%${searchTerm}%`);
+          // 仅在制造商名称和描述中搜索，暂时移除产品名称搜索以修复查询错误
+          query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
         }
 
         // 应用其他过滤条件
