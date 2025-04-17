@@ -36,7 +36,7 @@ export function FactoryTabs({ factory }: FactoryTabsProps) {
         </div>
 
         <TabsContent value="catalogo">
-          <CatalogTab pdfUrl={factory.catalog_pdf_url} />
+          <CatalogTab />
         </TabsContent>
 
         <TabsContent value="factory">
