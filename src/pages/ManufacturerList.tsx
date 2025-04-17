@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+
+
 import { Factory } from '../types';
 import { useManufacturerFilters, Filters } from '../hooks/useManufacturerFilters';
 import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters';
@@ -100,7 +100,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
 
   return (
     <div className="min-h-screen bg-white">
-      <Header onSearch={(term) => handleFilterChange('searchTerm', term)} />
+      
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="py-8">
@@ -175,7 +175,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
           </div>
         </div>
       </div>
-      <Footer />
+      
     </div>
   );
 }
