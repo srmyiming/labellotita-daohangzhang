@@ -16,7 +16,7 @@ export default function Footer() {
             <h3 className="text-white text-lg font-semibold mb-4">快速链接</h3>
             <ul className="space-y-2 text-sm">
               <li><Link to="/categories" className="hover:text-white">分类</Link></li>
-              <li><Link to="/manufacturers" className="hover:text-white">制造商</Link></li>
+              <li><Link to="/manufacturer-list" className="hover:text-white">制造商</Link></li>
               <li><Link to="/categories" className="hover:text-white">制造商地图</Link></li>
               <li><Link to="/about" className="hover:text-white">博客</Link></li>
             </ul>

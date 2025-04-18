@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "./ui/sheet";
+import { cn } from '../lib/utils';
 
 export default function Header({ 
   onSearch, 
@@ -89,13 +90,12 @@ export default function Header({
             >
               分类
             </Link>
-            <Link 
-              to="/manufacturers" 
-              className={`font-medium transition-colors ${
-                location.pathname === '/manufacturers' 
-                  ? 'text-primary' 
-                  : 'text-muted-foreground hover:text-primary'
-              }`}
+            <Link
+              to="/manufacturer-list"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                location.pathname === "/manufacturer-list" ? "text-black dark:text-white" : "text-muted-foreground"
+              )}
             >
               制造商
             </Link>
@@ -218,8 +218,11 @@ export default function Header({
                     分类
                   </Link>
                   <Link 
-                    to="/manufacturers" 
-                    className="flex items-center gap-2 px-2 py-4 hover:bg-accent rounded-lg transition-colors"
+                    to="/manufacturer-list"
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-4 hover:bg-accent rounded-lg transition-colors",
+                      location.pathname === "/manufacturer-list" ? "text-black dark:text-white" : "text-muted-foreground"
+                    )}
                   >
                     制造商
                   </Link>

@@ -5,6 +5,8 @@ import Header from './Header';
 import Footer from './Footer';
 import FloatingContact from './FloatingContact';
 import { useScrollTop } from '../hooks/useScrollTop';
+import { Link } from 'react-router-dom';
+import { cn } from '../lib/utils';
 
 const Layout: React.FC = () => {
   // 在布局组件中使用 useScrollTop，这样所有页面都会自动滚动到顶部

@@ -170,13 +170,13 @@ function AppContent() {
     if (term.trim()) {
       addToSearchHistory(term);
       // 跳转到制造商列表页并携带查询参数
-      navigate(`/manufacturers?search=${encodeURIComponent(term)}`);
+      navigate(`/manufacturer-list?search=${encodeURIComponent(term)}`);
     }
   };
   
   const handleFactoryClick = (factory: Factory) => {
     setSelectedFactory(factory);
-    navigate(`/manufacturers/${factory.id}`);
+    navigate(`/manufacturer-list/${factory.id}`);
   };
 
   return (
@@ -249,19 +249,18 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <AppContent /> },
       { 
-        path: 'manufacturers',
+        path: 'manufacturer-list',
         loader: ({ request }) => {
-          // 从URL参数中获取搜索词
           const url = new URL(request.url);
           const searchTerm = url.searchParams.get('search') || '';
-          return { searchTerm };
+          const categoryId = url.searchParams.get('category') || '';
+          return { searchTerm, categoryId };
         },
         element: <ManufacturerList onFactoryClick={(factory: Factory) => {
-          window.location.href = `/manufacturers/${factory.id}`;
+          window.location.href = `/manufacturer-list/${factory.id}`;
         }} />
       },
-      { path: 'manufacturers/:id', element: <ManufacturerDetailPage /> },
-      { path: 'static-factory', element: <StaticFactoryDetail /> },
+      { path: 'manufacturer-list/:id', element: <ManufacturerDetailPage /> },
       { path: 'categories', element: <Categories /> },
       { path: 'about', element: <About /> },
       { path: 'contact', element: <Contact /> }

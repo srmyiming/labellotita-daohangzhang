@@ -58,12 +58,7 @@ export default function Categories() {
   );
 
   const handleCategoryClick = (categoryId: string) => {
-    navigate('/manufacturers', { 
-      state: { 
-        selectedCategory: categoryId,
-        fromCategories: true 
-      } 
-    });
+    navigate(`/manufacturer-list?category=${categoryId}`);
   };
 
   return (
