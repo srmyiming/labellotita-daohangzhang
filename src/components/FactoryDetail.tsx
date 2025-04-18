@@ -1,4 +1,3 @@
-
 import { Factory } from '../types';
 import BreadcrumbNav from './factory/BreadcrumbNav';
 import FactoryBasicInfo from './factory/FactoryBasicInfo';
@@ -11,7 +10,9 @@ import {
   MapPin, 
   Tag,
   Mail,
-  Phone
+  Phone,
+  Globe,
+  Clock
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -99,64 +100,28 @@ export default function FactoryDetail({ factory, onBack, loading = false }: Fact
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 左侧主要内容 */}
             <div className="flex-1 space-y-8">
-              {/* 基本信息卡片 - 替代原来的 FactoryHeader */}
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <MapPin className="h-5 w-5 text-red-500" />
-                      <span className="text-gray-700">{factory.address}</span>
-                      {factory.category && (
-                        <>
-                          <span className="text-gray-300 mx-2">•</span>
-                          <Tag className="h-5 w-5 text-blue-500" />
-                          <span className="text-gray-700">分类: {factory.category}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button 
-                      className="bg-red-600 hover:bg-red-700 text-white shadow-sm"
-                      onClick={() => window.open(`mailto:${factory.email}`, '_blank')}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      发送邮件
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="border-red-200 hover:bg-red-50 text-red-600"
-                      onClick={() => window.open(`tel:${factory.phone}`, '_blank')}
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      拨打电话
-                    </Button>
+              {/* 图片画廊 */}
+              {galleryImages.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">工厂图片</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {galleryImages.map((img, index) => (
+                      <div 
+                        key={index} 
+                        className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity cursor-pointer"
+                        onClick={() => window.open(img, '_blank')}
+                      >
+                        <img 
+                          src={img} 
+                          alt={`${factory.name} 图片 ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* 图片画廊 */}
-                {galleryImages.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">工厂图片</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {galleryImages.map((img, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity cursor-pointer"
-                          onClick={() => window.open(img, '_blank')}
-                        >
-                          <img 
-                            src={img} 
-                            alt={`${factory.name} 图片 ${index + 1}`} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
               <FactoryBasicInfo 
                 description={factory.description}
                 manufacturer_tags={factory.manufacturer_tags}

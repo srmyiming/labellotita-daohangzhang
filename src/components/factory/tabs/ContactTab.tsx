@@ -15,7 +15,6 @@ export default function ContactTab({ factory }: ContactTabProps) {
         phone={factory.phone || '电话未提供'}
         email={factory.email || '邮箱未提供'}
         website={factory.website}
-        region={factory.region} // 传递 region 数据
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 
 export function PurchaseServiceCard() {
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sticky top-24">
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 sticky top-28 z-20">
       <div className="space-y-6">
         <div>
           <h2 className="flex items-center text-xl font-semibold mb-6">

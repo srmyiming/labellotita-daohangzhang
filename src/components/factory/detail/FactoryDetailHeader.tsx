@@ -16,7 +16,6 @@ export function FactoryDetailHeader({ factory, onBack }: FactoryDetailHeaderProp
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <FactoryHeader 
           name={factory.name}
-          address={factory.address}
           verified={factory.verified}
           category={factory.category}
         />
