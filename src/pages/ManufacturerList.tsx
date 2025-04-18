@@ -37,7 +37,6 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     searchSuggestions,
     searchHistory,
     clearHistory,
-    isLoading,
     error
   } = useManufacturerFilters({ onFactoryClick });
 
@@ -66,7 +65,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     }
   }, [location.key]); // 只在路由变化时执行
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" />
@@ -77,7 +76,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-red-500 mb-4">加载出错: {error.message}</p>
+        <p className="text-red-500 mb-4">加载出错: {error}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -93,12 +92,8 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
       <div className="flex flex-col items-center justify-center min-h-screen">
         <p className="text-gray-500 mb-4">没有找到符合条件的厂家</p>
         <button
-          onClick={() => {
-            const newSearchParams = new URLSearchParams();
-            window.history.replaceState(null, '', `${location.pathname}?${newSearchParams}`);
-            window.location.reload();
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          onClick={resetFilters}
+          className="text-red-600 font-medium hover:text-red-700"
         >
           重置筛选条件
         </button>

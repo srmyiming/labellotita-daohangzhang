@@ -73,7 +73,7 @@ export default function Header({
             <Link to="/" className="flex items-center gap-3">
               <Utensils className="h-8 w-8 text-red-600" />
               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-yellow-600">
-                西班牙食品目录
+                西班牙781食品
               </h1>
             </Link>
           </div>

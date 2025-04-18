@@ -7,8 +7,8 @@ export default function Footer() {
     <footer className="bg-gray-900 text-gray-300 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">西班牙食品目录</h3>
+          <div className="mb-8 lg:mb-0">
+            <h3 className="text-white text-lg font-semibold mb-4">西班牙781食品</h3>
             <p className="text-sm">最全面的西班牙食品制造商目录。</p>
           </div>
           
@@ -52,7 +52,9 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center">
-          © 2025 西班牙食品目录。保留所有权利。
+          <p className="text-sm text-gray-400 text-center">
+            © 2025 西班牙781食品。保留所有权利。
+          </p>
         </div>
       </div>
     </footer>

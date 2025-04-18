@@ -63,7 +63,7 @@ export default function Hero({ onSearch, searchHistory = [], suggestions = [] }:
     <div className="relative bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 py-32">
       <div className="absolute inset-0 bg-black opacity-10"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">西班牙食品目录</h1>
+        <h1 className="text-5xl font-bold text-white mb-6 drop-shadow-lg">西班牙781食品</h1>
         <p className="text-2xl text-white mb-12 max-w-3xl mx-auto leading-relaxed drop-shadow">
           在一个平台上找到西班牙最好的食品制造商和产品
         </p>

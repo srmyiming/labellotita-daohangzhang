@@ -4,6 +4,7 @@ import {
   RouterProvider, 
   useNavigate
 } from 'react-router-dom';
+import { useScrollTop } from './hooks/useScrollTop';
 import Hero from './components/Hero';
 
 import CategoryList from './components/CategoryList';
