@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Category, Region, Factory } from '../types';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -6,6 +6,26 @@ import { useSearchParams } from 'react-router-dom';
 
 const SEARCH_HISTORY_KEY = 'manufacturer_search_history';
 const MAX_HISTORY_ITEMS = 10;
+const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+
+// 缓存结构
+interface Cache {
+  timestamp: number;
+  data: any;
+}
+
+const cache: {
+  manufacturers?: Cache;
+  categories?: Cache;
+  regions?: Cache;
+  countries?: Cache;
+} = {};
+
+// 检查缓存是否有效
+const isCacheValid = (cacheEntry?: Cache) => {
+  if (!cacheEntry) return false;
+  return Date.now() - cacheEntry.timestamp < CACHE_DURATION;
+};
 
 interface UseManufacturerFiltersProps {
   onFactoryClick: (factory: Factory) => void;
@@ -63,6 +83,8 @@ interface RawManufacturer {
 
 export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFiltersProps) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 基础状态
   const [filters, setFilters] = useState<Filters>({
@@ -115,185 +137,229 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
     localStorage.removeItem(SEARCH_HISTORY_KEY);
   };
 
-  // 获取基础数据（分类、地区、国家）
-  useEffect(() => {
-    async function fetchBaseData() {
-      try {
-        console.log('开始获取基础数据...');
-        
-        // 获取分类数据
-        const categoriesResult = await supabase.from('category_counts').select('*');
-        console.log('分类数据结果:', categoriesResult);
-        if (categoriesResult.error) throw categoriesResult.error;
-
-        // 获取地区数据
-        const regionsResult = await supabase.from('regions').select('*');
-        console.log('地区数据结果:', regionsResult);
-        if (regionsResult.error) throw regionsResult.error;
-
-        // 获取国家数据
-        const countriesResult = await supabase.from('countries').select('*');
-        console.log('国家数据结果:', countriesResult);
-        if (countriesResult.error) throw countriesResult.error;
-
-        setData(prev => ({
-          ...prev,
-          categories: categoriesResult.data?.map(category => ({
-            id: category.id,
-            name: category.name,
-            icon: category.icon || 'box',
-            count: category.manufacturer_count
-          })) || [],
-          regions: regionsResult.data?.map(region => ({
-            id: region.code,
-            name: region.name,
-            count: 0
-          })) || [],
-          countries: countriesResult.data || []
-        }));
-
-        console.log('基础数据获取完成');
-      } catch (error) {
-        console.error('获取基础数据失败:', error);
-        setStatus(prev => ({
-          ...prev,
-          error: '获取基础数据失败，请刷新页面重试'
-        }));
-        toast.error('获取基础数据失败，请刷新页面重试');
-      }
+  // 优化获取基础数据的函数
+  const fetchBaseData = useCallback(async () => {
+    if (isCacheValid(cache.categories) && isCacheValid(cache.regions) && isCacheValid(cache.countries)) {
+      setData(prev => ({
+        ...prev,
+        categories: cache.categories!.data,
+        regions: cache.regions!.data,
+        countries: cache.countries!.data
+      }));
+      return;
     }
 
-    fetchBaseData();
+    try {
+      const [categoriesResult, regionsResult, countriesResult] = await Promise.all([
+        supabase.from('category_counts').select('*').order('manufacturer_count', { ascending: false }),
+        supabase.from('regions').select('*').order('name'),
+        supabase.from('countries').select('*').order('name')
+      ]);
+
+      if (categoriesResult.error) throw categoriesResult.error;
+      if (regionsResult.error) throw regionsResult.error;
+      if (countriesResult.error) throw countriesResult.error;
+
+      const categories = categoriesResult.data?.map(category => ({
+        id: category.id,
+        name: category.name,
+        icon: category.icon || 'box',
+        count: category.manufacturer_count
+      })) || [];
+
+      const regions = regionsResult.data?.map(region => ({
+        id: region.code,
+        name: region.name,
+        count: 0
+      })) || [];
+
+      const timestamp = Date.now();
+      cache.categories = { timestamp, data: categories };
+      cache.regions = { timestamp, data: regions };
+      cache.countries = { timestamp, data: countriesResult.data };
+
+      setData(prev => ({
+        ...prev,
+        categories,
+        regions,
+        countries: countriesResult.data
+      }));
+    } catch (error) {
+      console.error('获取基础数据失败:', error);
+      toast.error('获取基础数据失败，请刷新页面重试');
+    }
   }, []);
+
+  // 优化获取制造商列表的函数
+  const fetchManufacturers = useCallback(async () => {
+    try {
+      // 取消之前的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      setStatus(prev => ({ ...prev, loading: true, error: null }));
+
+      // 构建缓存键
+      const cacheKey = JSON.stringify({
+        searchTerm: filters.searchTerm,
+        categoryId: filters.categoryId,
+        regionId: filters.regionId,
+        exportCountry: filters.exportCountry
+      });
+
+      // 检查缓存
+      const cachedData = cache.manufacturers?.data?.[cacheKey];
+      if (cachedData && isCacheValid(cache.manufacturers)) {
+        setData(prev => ({
+          ...prev,
+          manufacturers: cachedData
+        }));
+        setStatus(prev => ({ ...prev, loading: false }));
+        return;
+      }
+
+      // 基本查询
+      let query = supabase
+        .from('manufacturers')
+        .select(`
+          id,
+          name,
+          description,
+          address,
+          city,
+          region,
+          phone,
+          email,
+          website,
+          verified,
+          rating,
+          is_pinned,
+          pinned_at,
+          manufacturer_images (
+            url,
+            type,
+            order
+          ),
+          manufacturer_category_relations (
+            category_id,
+            manufacturer_categories (
+              id,
+              name,
+              icon
+            )
+          ),
+          manufacturer_products (
+            name,
+            description
+          ),
+          manufacturer_export_countries (
+            country_code
+          ),
+          manufacturer_tags (
+            tags (
+              name
+            )
+          )
+        `);
+
+      // 应用过滤条件
+      if (filters.searchTerm) {
+        const searchTerm = filters.searchTerm.trim();
+        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+
+      if (filters.categoryId) {
+        query = query
+          .eq('manufacturer_category_relations.category_id', filters.categoryId)
+          .not('manufacturer_category_relations', 'is', null);
+      }
+
+      if (filters.regionId) {
+        query = query.eq('region', filters.regionId);
+      }
+
+      if (filters.exportCountry) {
+        query = query.eq('manufacturer_export_countries.country_code', filters.exportCountry);
+      }
+
+      // 排序
+      query = query
+        .order('is_pinned', { ascending: false })
+        .order('pinned_at', { ascending: false })
+        .order('rating', { ascending: false });
+
+      const { data: rawManufacturers, error } = await query;
+
+      if (error) throw error;
+
+      const manufacturers = (rawManufacturers as unknown as RawManufacturer[])?.map(raw => ({
+        id: raw.id,
+        name: raw.name,
+        category: raw.manufacturer_category_relations?.[0]?.manufacturer_categories?.name || '',
+        description: raw.description,
+        address: raw.address,
+        city: raw.city,
+        phone: raw.phone,
+        email: raw.email,
+        website: raw.website,
+        products: raw.manufacturer_products?.map(p => p.name) || [],
+        verified: raw.verified,
+        rating: raw.rating,
+        region: raw.region,
+        is_pinned: raw.is_pinned,
+        pinned_at: raw.pinned_at,
+        manufacturer_tags: raw.manufacturer_tags,
+        manufacturer_export_countries: raw.manufacturer_export_countries,
+        factoryImages: raw.manufacturer_images?.map(img => img.url) || []
+      })) || [];
+
+      // 更新缓存
+      if (!cache.manufacturers) {
+        cache.manufacturers = { timestamp: Date.now(), data: {} };
+      }
+      cache.manufacturers.data[cacheKey] = manufacturers;
+
+      setData(prev => ({
+        ...prev,
+        manufacturers
+      }));
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching manufacturers:', error);
+        toast.error('获取制造商列表失败');
+      }
+    } finally {
+      setStatus(prev => ({ ...prev, loading: false }));
+    }
+  }, [filters]);
+
+  // 使用防抖处理搜索
+  const debouncedFetchManufacturers = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(fetchManufacturers, 300);
+  }, [fetchManufacturers]);
+
+  // 获取基础数据
+  useEffect(() => {
+    fetchBaseData();
+  }, [fetchBaseData]);
 
   // 获取制造商列表
   useEffect(() => {
-    const fetchManufacturers = async () => {
-      try {
-        setStatus(prev => ({ ...prev, loading: true, error: null }));
-        
-        // 基本查询
-        let query = supabase
-          .from('manufacturers')
-          .select(`
-            id,
-            name,
-            description,
-            address,
-            city,
-            region,
-            phone,
-            email,
-            website,
-            verified,
-            rating,
-            is_pinned,
-            pinned_at,
-            manufacturer_images (
-              url,
-              type,
-              order
-            ),
-            manufacturer_category_relations (
-              category_id,
-              manufacturer_categories (
-                id,
-                name,
-                icon
-              )
-            ),
-            manufacturer_products (
-              name,
-              description
-            ),
-            manufacturer_export_countries (
-              country_code
-            ),
-            manufacturer_tags (
-              tags (
-                name
-              )
-            )
-          `);
-
-        // 如果有搜索条件,添加搜索过滤
-        if (filters.searchTerm) {
-          const searchTerm = filters.searchTerm.trim();
-          // 仅在制造商名称和描述中搜索，暂时移除产品名称搜索以修复查询错误
-          query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-        }
-
-        // 应用其他过滤条件
-        if (filters.categoryId) {
-          query = query
-            .eq('manufacturer_category_relations.category_id', filters.categoryId)
-            .not('manufacturer_category_relations', 'is', null);
-        }
-
-        if (filters.regionId) {
-          query = query.eq('region', filters.regionId);
-        }
-
-        if (filters.exportCountry) {
-          query = query.eq('manufacturer_export_countries.country_code', filters.exportCountry);
-        }
-
-        // 排序
-        query = query
-          .order('is_pinned', { ascending: false })
-          .order('pinned_at', { ascending: false })
-          .order('rating', { ascending: false });
-
-        const { data: rawManufacturers, error } = await query;
-
-        if (error) throw error;
-
-        // 转换数据结构以匹配Factory类型
-        const manufacturers: Factory[] = (rawManufacturers as unknown as RawManufacturer[])?.map(raw => ({
-          id: raw.id,
-          name: raw.name,
-          category: raw.manufacturer_category_relations?.[0]?.manufacturer_categories?.name || '',
-          description: raw.description,
-          address: raw.address,
-          city: raw.city,
-          phone: raw.phone,
-          email: raw.email,
-          website: raw.website,
-          products: raw.manufacturer_products?.map(p => p.name) || [],
-          verified: raw.verified,
-          rating: raw.rating,
-          region: raw.region,
-          is_pinned: raw.is_pinned,
-          pinned_at: raw.pinned_at,
-          manufacturer_tags: raw.manufacturer_tags,
-          manufacturer_export_countries: raw.manufacturer_export_countries,
-          factoryImages: raw.manufacturer_images?.map(img => img.url) || []
-        })) || [];
-
-        setData(prev => ({
-          ...prev,
-          manufacturers
-        }));
-      } catch (error) {
-        console.error('Error fetching manufacturers:', error);
-        setStatus(prev => ({
-          ...prev,
-          error: '获取制造商列表失败'
-        }));
-        toast.error('获取制造商列表失败');
-      } finally {
-        setStatus(prev => ({ ...prev, loading: false }));
+    debouncedFetchManufacturers();
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
-
-    const timer = setTimeout(fetchManufacturers, 300);
-    return () => clearTimeout(timer);
-  }, [
-    filters.searchTerm,
-    filters.categoryId,
-    filters.regionId,
-    filters.exportCountry
-  ]);
+  }, [debouncedFetchManufacturers]);
 
   // 从制造商数据中提取标签
   const allTags = useMemo(() => {
@@ -361,7 +427,12 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
   }, [filters.searchTerm, data.manufacturers, filteredTags]);
 
   // 更新过滤器
-  const updateFilter = (key: keyof Filters, value: any) => {
+  const updateFilter = useCallback((key: keyof Filters, value: any) => {
+    // 如果值没有变化，直接返回
+    if (filters[key] === value) {
+      return;
+    }
+
     setFilters(prev => ({ ...prev, [key]: value }));
     
     // 更新URL参数
@@ -369,16 +440,24 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
     if (value) {
       switch (key) {
         case 'searchTerm':
-          newSearchParams.set('search', value);
+          if (value !== searchParams.get('search')) {
+            newSearchParams.set('search', value);
+          }
           break;
         case 'categoryId':
-          newSearchParams.set('category', value);
+          if (value !== searchParams.get('category')) {
+            newSearchParams.set('category', value);
+          }
           break;
         case 'regionId':
-          newSearchParams.set('region', value);
+          if (value !== searchParams.get('region')) {
+            newSearchParams.set('region', value);
+          }
           break;
         case 'exportCountry':
-          newSearchParams.set('country', value);
+          if (value !== searchParams.get('country')) {
+            newSearchParams.set('country', value);
+          }
           break;
       }
     } else {
@@ -397,15 +476,21 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
           break;
       }
     }
-    setSearchParams(newSearchParams);
+
+    // 只有当参数真正发生变化时才更新 URL
+    const currentParams = new URLSearchParams(searchParams).toString();
+    const newParams = newSearchParams.toString();
+    if (currentParams !== newParams) {
+      setSearchParams(newSearchParams, { replace: true }); // 使用 replace 而不是 push
+    }
 
     if (key === 'searchTerm' && value) {
       saveToHistory(value);
     }
-  };
+  }, [filters, searchParams, setSearchParams]);
 
   // 重置所有过滤器
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilters({
       searchTerm: '',
       categoryId: null,
@@ -414,9 +499,9 @@ export function useManufacturerFilters({ onFactoryClick }: UseManufacturerFilter
       tagSearch: '',
       selectedTags: []
     });
-    // 清除所有URL参数
-    setSearchParams(new URLSearchParams());
-  };
+    // 清除所有URL参数，使用 replace 而不是 push
+    setSearchParams(new URLSearchParams(), { replace: true });
+  }, [setSearchParams]);
 
   // 切换标签选择
   const toggleTag = (tag: string) => {

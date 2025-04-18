@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation, useSearchParams, useLoaderData } from 'react-router-dom';
 import { Factory } from '../types';
 import { useManufacturerFilters } from '../hooks/useManufacturerFilters';
@@ -6,6 +6,7 @@ import ManufacturerFilters from '../components/manufacturer/ManufacturerFilters'
 import ManufacturerSearch from '../components/manufacturer/ManufacturerSearch';
 import ManufacturerListItem from '../components/manufacturer/ManufacturerListItem';
 import { Loader2 } from 'lucide-react';
+import { Spinner } from '../components/ui/Spinner';
 
 interface ManufacturerListProps {
   onFactoryClick: (factory: Factory) => void;
@@ -20,13 +21,8 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const loaderData = useLoaderData() as LoaderData;
+  const isInitialMount = useRef(true);
   
-  // 从路由状态和URL参数获取初始值
-  const { selectedCategory: categoryFromRoute } = location.state || {};
-  const searchTermFromUrl = searchParams.get('search') || loaderData?.searchTerm || '';
-  const categoryIdFromUrl = searchParams.get('category') || categoryFromRoute || loaderData?.categoryId || '';
-
-  // 使用自定义钩子管理筛选状态
   const {
     filters,
     updateFilter,
@@ -40,18 +36,75 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
     filteredTags,
     searchSuggestions,
     searchHistory,
-    clearHistory
+    clearHistory,
+    isLoading,
+    error
   } = useManufacturerFilters({ onFactoryClick });
 
-  // 初始化搜索条件
+  // 只在组件首次挂载时从 URL 参数更新过滤器
   useEffect(() => {
-    if (searchTermFromUrl) {
-      updateFilter('searchTerm', searchTermFromUrl);
+    if (isInitialMount.current) {
+      const categoryId = searchParams.get('category');
+      const searchTerm = searchParams.get('search');
+      const regionId = searchParams.get('region');
+      const country = searchParams.get('country');
+
+      if (categoryId && categoryId !== filters.categoryId) {
+        updateFilter('categoryId', categoryId);
+      }
+      if (searchTerm && searchTerm !== filters.searchTerm) {
+        updateFilter('searchTerm', searchTerm);
+      }
+      if (regionId && regionId !== filters.regionId) {
+        updateFilter('regionId', regionId);
+      }
+      if (country && country !== filters.exportCountry) {
+        updateFilter('exportCountry', country);
+      }
+
+      isInitialMount.current = false;
     }
-    if (categoryIdFromUrl) {
-      updateFilter('categoryId', categoryIdFromUrl);
-    }
-  }, [searchTermFromUrl, categoryIdFromUrl, updateFilter]);
+  }, [location.key]); // 只在路由变化时执行
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-red-500 mb-4">加载出错: {error.message}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
+
+  if (!manufacturers.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-gray-500 mb-4">没有找到符合条件的厂家</p>
+        <button
+          onClick={() => {
+            const newSearchParams = new URLSearchParams();
+            window.history.replaceState(null, '', `${location.pathname}?${newSearchParams}`);
+            window.location.reload();
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          重置筛选条件
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -102,7 +155,7 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
             
             {loading ? (
               <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent"></div>
               </div>
             ) : manufacturers.length > 0 ? (
               <div className="space-y-6">
@@ -117,11 +170,6 @@ export default function ManufacturerList({ onFactoryClick }: ManufacturerListPro
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                <img 
-                  src="/images/no-results.svg" 
-                  alt="没有找到结果" 
-                  className="w-32 h-32 mx-auto mb-4 opacity-70"
-                />
                 <h3 className="text-xl font-medium text-gray-900 mb-2">没有找到匹配的制造商</h3>
                 <p className="text-gray-500 mb-4">
                   尝试调整您的筛选条件或搜索词，以查看更多结果。

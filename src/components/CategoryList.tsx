@@ -1,8 +1,8 @@
 import React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Beef, Box, Droplet, Cookie, Wine, Cake, Milk } from 'lucide-react';
-import { supabase, manufacturersApi } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Category } from '../types';
 import { toast } from 'sonner';
 
@@ -19,46 +19,94 @@ const iconMap = {
 export default function CategoryList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleCategoryClick = useCallback((categoryId: string) => {
-    navigate('/manufacturers', { 
-      state: { 
-        selectedCategory: categoryId,
-        fromCategories: true 
-      } 
-    });
-  }, [navigate]);
+  const handleCategoryClick = (categoryId: string) => {
+    if (!categoryId) {
+      toast.error('无效的分类');
+      return;
+    }
+    navigate(`/manufacturers?category=${categoryId}`);
+  };
 
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     const fetchCategories = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        const cachedCategories = sessionStorage.getItem('categories');
+        if (cachedCategories && isMounted) {
+          setCategories(JSON.parse(cachedCategories));
+          setLoading(false);
+          return;
+        }
+
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('category_counts')
-          .select('*');
+          .select('*')
+          .order('manufacturer_count', { ascending: false })
+          .abortSignal(controller.signal);
         
         if (categoriesError) throw categoriesError;
         
-        // 转换数据结构以匹配 Category 类型
+        if (!categoriesData) {
+          throw new Error('未获取到分类数据');
+        }
+        
         const formattedCategories = categoriesData.map(category => ({
           id: category.id,
           name: category.name,
           icon: category.icon || 'box',
           count: category.manufacturer_count
         }));
-        
-        setCategories(formattedCategories);
-      } catch (error) {
+
+        if (isMounted) {
+          setCategories(formattedCategories);
+          sessionStorage.setItem('categories', JSON.stringify(formattedCategories));
+        }
+      } catch (error: any) {
+        if (error.name === 'AbortError') return;
         console.error('Error fetching categories:', error);
-        toast.error('获取分类列表失败');
+        if (isMounted) {
+          setError('获取分类列表失败');
+          toast.error('获取分类列表失败');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchCategories();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => {
+            sessionStorage.removeItem('categories');
+            window.location.reload();
+          }}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          重新加载
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
